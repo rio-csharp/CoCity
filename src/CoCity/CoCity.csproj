@@ -45,6 +45,22 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+		<AndroidSigningKeyStore>mykeystore.keystore</AndroidSigningKeyStore>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net10.0-android|AnyCPU'">
+	  <AndroidKeyStore>True</AndroidKeyStore>
+	  <AndroidSigningStorePass>CL1BYSzCYKU7Ybq3AZTX</AndroidSigningStorePass>
+	  <AndroidSigningKeyAlias>cocitykey</AndroidSigningKeyAlias>
+	  <AndroidSigningKeyPass>CL1BYSzCYKU7Ybq3AZTX</AndroidSigningKeyPass>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net10.0-android|AnyCPU'">
+	  <AndroidKeyStore>True</AndroidKeyStore>
+	  <AndroidPackageFormat>apk</AndroidPackageFormat>
+	  <AndroidSigningStorePass>CL1BYSzCYKU7Ybq3AZTX</AndroidSigningStorePass>
+	  <AndroidSigningKeyAlias>cocitykey</AndroidSigningKeyAlias>
+	  <AndroidSigningKeyPass>CL1BYSzCYKU7Ybq3AZTX</AndroidSigningKeyPass>
 	</PropertyGroup>
 
 	<ItemGroup>

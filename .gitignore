@@ -93,3 +93,5 @@ ehthumbs.db
 *.db
 
 # Add project-specific ignores below as needed
+mykeystore.keystore
+*.keystore
