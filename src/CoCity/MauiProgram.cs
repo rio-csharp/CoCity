@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using CoCity.Foundation.Services;
+using CoCity.ViewModels;
+using Microsoft.Extensions.Logging;
 
 namespace CoCity
 {
@@ -15,8 +17,12 @@ namespace CoCity
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
 
+            builder.Services.AddSingleton<ICoreDataFoundationService, SeedCoreDataFoundationService>();
+            builder.Services.AddTransient<MainPageViewModel>();
+            builder.Services.AddTransient<MainPage>();
+
 #if DEBUG
-    		builder.Logging.AddDebug();
+     		builder.Logging.AddDebug();
 #endif
 
             return builder.Build();
