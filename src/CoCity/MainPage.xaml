@@ -17,9 +17,7 @@
 
             <Label Text="{Binding RealmSummary}" />
 
-            <Border Padding="16"
-                    Stroke="#D0D7DE"
-                    BackgroundColor="#F8FAFC">
+            <Border Padding="16">
                 <Border.StrokeShape>
                     <RoundRectangle CornerRadius="16" />
                 </Border.StrokeShape>
@@ -40,8 +38,7 @@
                                  Spacing="12">
                 <BindableLayout.ItemTemplate>
                     <DataTemplate x:DataType="viewModels:RegionCardViewModel">
-                        <Border Padding="14"
-                                Stroke="#D0D7DE">
+                        <Border Padding="14">
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="14" />
                             </Border.StrokeShape>
@@ -64,8 +61,7 @@
                                  Spacing="12">
                 <BindableLayout.ItemTemplate>
                     <DataTemplate x:DataType="viewModels:TownCardViewModel">
-                        <Border Padding="14"
-                                Stroke="#D0D7DE">
+                        <Border Padding="14">
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="14" />
                             </Border.StrokeShape>
@@ -89,8 +85,7 @@
                                  Spacing="12">
                 <BindableLayout.ItemTemplate>
                     <DataTemplate x:DataType="viewModels:SectCardViewModel">
-                        <Border Padding="14"
-                                Stroke="#D0D7DE">
+                        <Border Padding="14">
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="14" />
                             </Border.StrokeShape>
@@ -113,8 +108,7 @@
                                  Spacing="12">
                 <BindableLayout.ItemTemplate>
                     <DataTemplate x:DataType="viewModels:MinistryCardViewModel">
-                        <Border Padding="14"
-                                Stroke="#D0D7DE">
+                        <Border Padding="14">
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="14" />
                             </Border.StrokeShape>

@@ -30,7 +30,7 @@ namespace CoCity.ViewModels
             Towns = realm.Towns
                 .Select(town => new TownCardViewModel(
                     Name: town.Name,
-                    LocationSummary: $"Region: {regionNames[town.RegionId]}",
+                    LocationSummary: $"Region: {regionNames.GetValueOrDefault(town.RegionId, "Unknown region")}",
                     PopulationSummary: $"Population: {FormatNumber(town.Population)}",
                     IndustrySummary: $"Industry mix: {string.Join(" | ", town.Industries.Select(FormatIndustryAllocation))}",
                     OutputSummary: $"Baseline output: {string.Join(" | ", town.Output.Select(FormatOutputMetric))}"))
@@ -39,7 +39,7 @@ namespace CoCity.ViewModels
             Sects = realm.Sects
                 .Select(sect => new SectCardViewModel(
                     Name: sect.Name,
-                    LocationSummary: $"Region: {regionNames[sect.RegionId]}",
+                    LocationSummary: $"Region: {regionNames.GetValueOrDefault(sect.RegionId, "Unknown region")}",
                     FinanceSummary: $"Funds: {FormatNumber(sect.Funds)} taels | Population: {FormatNumber(sect.Population)}",
                     OutputSummary: $"Baseline output: {string.Join(" | ", sect.Output.Select(FormatOutputMetric))}"))
                 .ToArray();
