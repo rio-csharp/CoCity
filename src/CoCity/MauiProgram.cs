@@ -1,4 +1,4 @@
-﻿using CoCity.Foundation.Services;
+using CoCity.Foundation.Services;
 using CoCity.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -18,11 +18,12 @@ namespace CoCity
                 });
 
             builder.Services.AddSingleton<ICoreDataFoundationService, SeedCoreDataFoundationService>();
+            builder.Services.AddSingleton<IMortalRealmSimulationService, DefaultMortalRealmSimulationService>();
             builder.Services.AddTransient<MainPageViewModel>();
             builder.Services.AddTransient<MainPage>();
 
 #if DEBUG
-     		builder.Logging.AddDebug();
+            builder.Logging.AddDebug();
 #endif
 
             return builder.Build();
