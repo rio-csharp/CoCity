@@ -1,0 +1,27 @@
+namespace CoCity.Foundation.Services
+{
+    /// <summary>
+    /// Calculates mortal industry output based on labor force, government efficiency,
+    /// and base output rates per worker.
+    /// </summary>
+    public interface IMortalIndustrySimulationService
+    {
+        /// <summary>Initializes industry simulation state for all towns at turn 0.</summary>
+        IReadOnlyList<MortalTownIndustryState> Initialize(
+            RealmState foundation,
+            IReadOnlyList<MinistryState> ministries);
+
+        /// <summary>
+        /// Advances the industry simulation by one turn.
+        /// Returns the next industry states and a report of industry events.
+        /// </summary>
+        IndustryTurnResult Step(
+            RealmState foundation,
+            IReadOnlyList<MinistryState> ministries,
+            IReadOnlyList<MortalTownIndustryState> currentStates);
+    }
+
+    public readonly record struct IndustryTurnResult(
+        IReadOnlyList<MortalTownIndustryState> NextStates,
+        IndustryTurnReport Report);
+}

@@ -10,29 +10,35 @@ namespace CoCity.ViewModels
     {
         private readonly RealmState _foundation;
         private readonly IMortalRealmSimulationService _simulationService;
+        private readonly IMortalIndustrySimulationService _industryService;
         private readonly IReadOnlyDictionary<string, string> _regionNamesById;
         private readonly IReadOnlyDictionary<string, MortalTownState> _townsById;
         private MortalRealmState _simulationState;
+        private IReadOnlyList<MortalTownIndustryState> _industryStates;
         private TurnReport? _lastReport;
+        private IndustryTurnReport? _lastIndustryReport;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public MainPageViewModel(
             ICoreDataFoundationService foundationService,
-            IMortalRealmSimulationService simulationService)
+            IMortalRealmSimulationService simulationService,
+            IMortalIndustrySimulationService industryService)
         {
             _simulationService = simulationService;
+            _industryService = industryService;
             _foundation = foundationService.GetInitialState();
             _regionNamesById = _foundation.Regions.ToDictionary(region => region.Id, region => region.Name);
             _townsById = _foundation.Towns.ToDictionary(town => town.Id);
             _simulationState = _simulationService.Initialize(_foundation);
+            _industryStates = _industryService.Initialize(_foundation, _foundation.Ministries);
 
             AdvanceTurnCommand = new Microsoft.Maui.Controls.Command(ExecuteAdvanceTurn);
             BuildDisplayState();
         }
 
         public string PageTitle => "Mortal Realm Simulation";
-        public string PageSubtitle => "Task 1.2 resolves food pressure, natural population change, and sect recruitment each turn.";
+        public string PageSubtitle => "Task 1.3 adds industry output calculation: labor force drives production, government efficiency modulates output.";
         public string RealmSummary => $"{_foundation.RealmName} — Turn {SimulationTurnNumber}";
         public int SimulationTurnNumber => _simulationState.TurnNumber;
 
@@ -45,11 +51,13 @@ namespace CoCity.ViewModels
         public IReadOnlyList<SectCardViewModel> Sects { get; private set; } = [];
         public IReadOnlyList<MinistryCardViewModel> Ministries { get; private set; } = [];
         public IReadOnlyList<TownSimulationCardViewModel> TownSimulations { get; private set; } = [];
+        public IReadOnlyList<TownIndustryCardViewModel> TownIndustries { get; private set; } = [];
         public IReadOnlyList<RecruitmentEventViewModel> RecruitmentEvents { get; private set; } = [];
         public IReadOnlyList<TurnEventViewModel> TurnEvents { get; private set; } = [];
 
         public bool HasTurnEvents => TurnEvents.Count > 0;
         public bool HasRecruitmentEvents => RecruitmentEvents.Count > 0;
+        public bool HasIndustryEvents => TownIndustries.Count > 0;
 
         public System.Windows.Input.ICommand AdvanceTurnCommand { get; }
 
@@ -58,6 +66,11 @@ namespace CoCity.ViewModels
             var result = _simulationService.Step(_foundation, _simulationState);
             _simulationState = result.NextState;
             _lastReport = result.Report;
+
+            var industryResult = _industryService.Step(_foundation, _foundation.Ministries, _industryStates);
+            _industryStates = industryResult.NextStates;
+            _lastIndustryReport = industryResult.Report;
+
             BuildDisplayState();
 
             OnPropertyChanged(nameof(SimulationTurnNumber));
@@ -70,6 +83,8 @@ namespace CoCity.ViewModels
             OnPropertyChanged(nameof(RecruitmentEvents));
             OnPropertyChanged(nameof(HasTurnEvents));
             OnPropertyChanged(nameof(HasRecruitmentEvents));
+            OnPropertyChanged(nameof(TownIndustries));
+            OnPropertyChanged(nameof(HasIndustryEvents));
         }
 
         private void BuildDisplayState()
@@ -127,6 +142,16 @@ namespace CoCity.ViewModels
                         ? $"Recruited away this turn: {FormatNumber(town.RecruitsLostLastTurn)}"
                         : "Recruited away this turn: 0",
                     ChangeSummary: $"{FormatSignedNumber(town.PopulationChange)} total ({town.ChangeReason})"))
+                .ToImmutableArray();
+
+            TownIndustries = _industryStates
+                .Select(industry => new TownIndustryCardViewModel(
+                    TownName: industry.TownName,
+                    LaborForceSummary: $"Labor force: Agriculture {FormatNumber(industry.LaborForce.Agriculture)} | Handicrafts {FormatNumber(industry.LaborForce.Handicrafts)} | Commerce {FormatNumber(industry.LaborForce.Commerce)}",
+                    GrossOutputSummary: $"Gross output: Agriculture {FormatNumber(industry.GrossOutput.AgricultureUnits)} | Handicrafts {FormatNumber(industry.GrossOutput.HandicraftsUnits)} | Commerce {FormatNumber(industry.GrossOutput.CommerceUnits)}",
+                    GovernmentEfficiencySummary: $"Government efficiency: {industry.GovernmentEfficiency:F2}x",
+                    NetOutputSummary: $"Net output: Agriculture {FormatNumber(industry.NetOutput.AgricultureUnits)} | Handicrafts {FormatNumber(industry.NetOutput.HandicraftsUnits)} | Commerce {FormatNumber(industry.NetOutput.CommerceUnits)}",
+                    PurchasableSurplusSummary: $"Available for purchase: Agriculture {FormatNumber(industry.PurchasableSurplus.AgricultureUnits)} | Handicrafts {FormatNumber(industry.PurchasableSurplus.HandicraftsUnits)} | Commerce {FormatNumber(industry.PurchasableSurplus.CommerceUnits)}"))
                 .ToImmutableArray();
 
             if (_lastReport is null)
@@ -230,4 +255,12 @@ namespace CoCity.ViewModels
     public sealed record RecruitmentEventViewModel(
         string SectName,
         string RecruitsSummary);
+
+    public sealed record TownIndustryCardViewModel(
+        string TownName,
+        string LaborForceSummary,
+        string GrossOutputSummary,
+        string GovernmentEfficiencySummary,
+        string NetOutputSummary,
+        string PurchasableSurplusSummary);
 }

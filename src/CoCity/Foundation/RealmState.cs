@@ -33,7 +33,8 @@ namespace CoCity.Foundation
         int FoodConsumptionPerCapita,
         int FoodProduction,
         IReadOnlyList<IndustryAllocation> Industries,
-        IReadOnlyList<OutputMetric> Output);
+        IReadOnlyList<OutputMetric> Output,
+        IndustryBaseOutputRates BaseOutputPerWorker);
 
     public sealed record IndustryAllocation(
         MortalIndustryType Industry,
@@ -45,6 +46,12 @@ namespace CoCity.Foundation
         Handicrafts,
         Commerce
     }
+
+    /// <summary>Base output per worker for each industry type.</summary>
+    public sealed record IndustryBaseOutputRates(
+        int AgriculturePerWorker,
+        int HandicraftsPerWorker,
+        int CommercePerWorker);
 
     public sealed record SectState(
         string Id,
@@ -134,4 +141,44 @@ namespace CoCity.Foundation
         string SectName,
         string RegionId,
         int RecruitsGathered);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Industry simulation model
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// <summary>Per-industry output amounts.</summary>
+    public sealed record IndustryOutput(
+        int AgricultureUnits,
+        int HandicraftsUnits,
+        int CommerceUnits);
+
+    /// <summary>Per-town industry simulation state for a single turn.</summary>
+    public sealed record MortalTownIndustryState(
+        string TownId,
+        string TownName,
+        LaborForceDistribution LaborForce,
+        IndustryOutput GrossOutput,
+        decimal GovernmentEfficiency,
+        IndustryOutput NetOutput,
+        IndustryOutput PurchasableSurplus);
+
+    /// <summary>Labor force distributed across industry types.</summary>
+    public sealed record LaborForceDistribution(
+        int Agriculture,
+        int Handicrafts,
+        int Commerce);
+
+    /// <summary>Reports industry production for a single town per turn.</summary>
+    public sealed record TownIndustryEvent(
+        string TownId,
+        string TownName,
+        LaborForceDistribution LaborForce,
+        IndustryOutput GrossOutput,
+        decimal GovernmentEfficiency,
+        IndustryOutput NetOutput,
+        IndustryOutput PurchasableSurplus);
+
+    /// <summary>Reports all industry events for a turn.</summary>
+    public sealed record IndustryTurnReport(
+        IReadOnlyList<TownIndustryEvent> TownIndustryEvents);
 }
