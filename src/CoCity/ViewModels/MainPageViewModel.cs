@@ -84,7 +84,6 @@ namespace CoCity.ViewModels
             OnPropertyChanged(nameof(HasTurnEvents));
             OnPropertyChanged(nameof(HasRecruitmentEvents));
             OnPropertyChanged(nameof(TownIndustries));
-            OnPropertyChanged(nameof(HasIndustryEvents));
         }
 
         private void BuildDisplayState()
