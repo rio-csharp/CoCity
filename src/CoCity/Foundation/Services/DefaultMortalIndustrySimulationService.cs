@@ -16,19 +16,26 @@ namespace CoCity.Foundation.Services
             var efficiency = CalculateGovernmentEfficiency(ministries);
 
             return foundation.Towns
-                .Select(town => CalculateTownIndustryState(town, efficiency))
+                .Select(town => CalculateTownIndustryState(town, town.Population, efficiency))
                 .ToImmutableArray();
         }
 
         public IndustryTurnResult Step(
             RealmState foundation,
             IReadOnlyList<MinistryState> ministries,
+            MortalRealmState mortalRealmState,
             IReadOnlyList<MortalTownIndustryState> currentStates)
         {
             var efficiency = CalculateGovernmentEfficiency(ministries);
+            var currentPopulationByTownId = mortalRealmState.Towns
+                .ToDictionary(t => t.TownId, t => t.CurrentPopulation);
 
             var nextStates = foundation.Towns
-                .Select(town => CalculateTownIndustryState(town, efficiency))
+                .Select(town =>
+                {
+                    var currentPopulation = currentPopulationByTownId.GetValueOrDefault(town.Id, town.Population);
+                    return CalculateTownIndustryState(town, currentPopulation, efficiency);
+                })
                 .ToImmutableArray();
 
             var townEvents = nextStates
@@ -50,9 +57,10 @@ namespace CoCity.Foundation.Services
 
         private static MortalTownIndustryState CalculateTownIndustryState(
             MortalTownState town,
+            int currentPopulation,
             decimal governmentEfficiency)
         {
-            var laborForce = CalculateLaborForce(town);
+            var laborForce = CalculateLaborForce(town, currentPopulation);
             var grossOutput = CalculateGrossOutput(town.BaseOutputPerWorker, laborForce);
             var netOutput = ApplyEfficiency(grossOutput, governmentEfficiency);
             var purchasableSurplus = CalculatePurchasableSurplus(netOutput);
@@ -67,10 +75,10 @@ namespace CoCity.Foundation.Services
                 PurchasableSurplus: purchasableSurplus);
         }
 
-        private static LaborForceDistribution CalculateLaborForce(MortalTownState town)
+        private static LaborForceDistribution CalculateLaborForce(MortalTownState town, int currentPopulation)
         {
-            // Recruitment pool is population above minimum threshold available for industry work
-            var workingPopulation = Math.Max(0, town.Population - 100); // 100 is minimum population floor
+            // Working population is total population minus the minimum population floor (100)
+            var workingPopulation = Math.Max(0, currentPopulation - 100);
 
             // Distribute working population according to industry allocation percentages
             var agricultureShare = town.Industries

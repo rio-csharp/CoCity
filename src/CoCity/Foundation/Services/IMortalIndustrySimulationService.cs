@@ -14,10 +14,12 @@ namespace CoCity.Foundation.Services
         /// <summary>
         /// Advances the industry simulation by one turn.
         /// Returns the next industry states and a report of industry events.
+        /// Uses current population from mortalRealmState to calculate labor force.
         /// </summary>
         IndustryTurnResult Step(
             RealmState foundation,
             IReadOnlyList<MinistryState> ministries,
+            MortalRealmState mortalRealmState,
             IReadOnlyList<MortalTownIndustryState> currentStates);
     }
 

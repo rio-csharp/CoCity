@@ -67,7 +67,7 @@ namespace CoCity.ViewModels
             _simulationState = result.NextState;
             _lastReport = result.Report;
 
-            var industryResult = _industryService.Step(_foundation, _foundation.Ministries, _industryStates);
+            var industryResult = _industryService.Step(_foundation, _foundation.Ministries, _simulationState, _industryStates);
             _industryStates = industryResult.NextStates;
             _lastIndustryReport = industryResult.Report;
 
