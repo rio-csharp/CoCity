@@ -30,6 +30,8 @@ namespace CoCity.Foundation
         string RegionId,
         string Name,
         int Population,
+        int FoodConsumptionPerCapita,
+        int FoodProduction,
         IReadOnlyList<IndustryAllocation> Industries,
         IReadOnlyList<OutputMetric> Output);
 
@@ -84,4 +86,52 @@ namespace CoCity.Foundation
         int Administration,
         int Integrity,
         int Loyalty);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Simulation model (mutable turn-by-turn state)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// <summary>Immutable snapshot of all mortal-realm simulation state for a single turn.</summary>
+    public sealed record MortalRealmState(
+        IReadOnlyList<MortalTownSimulationState> Towns,
+        IReadOnlyList<SectRecruitmentSimulationState> Sects,
+        int TurnNumber);
+
+    public sealed record SectRecruitmentSimulationState(
+        string SectId,
+        string SectName,
+        string RegionId,
+        int RecruitablesFromRegion);
+
+    /// <summary>Per-town simulation state.</summary>
+    public sealed record MortalTownSimulationState(
+        string TownId,
+        string TownName,
+        int CurrentPopulation,
+        int FoodBalance,
+        int RecruitmentPool,
+        int PopulationChange,
+        int RecruitsLostLastTurn,
+        string ChangeReason);
+
+    /// <summary>Reports every side effect produced by a turn step.</summary>
+    public sealed record TurnReport(
+        int TurnNumber,
+        IReadOnlyList<TownTurnEvent> TownEvents,
+        IReadOnlyList<SectRecruitmentEvent> RecruitmentEvents);
+
+    public sealed record TownTurnEvent(
+        string TownId,
+        string TownName,
+        int PreviousPopulation,
+        int CurrentPopulation,
+        int FoodBalance,
+        int RecruitsLost,
+        string ChangeReason);
+
+    public sealed record SectRecruitmentEvent(
+        string SectId,
+        string SectName,
+        string RegionId,
+        int RecruitsGathered);
 }

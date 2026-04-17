@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:viewModels="clr-namespace:CoCity.ViewModels"
@@ -7,6 +7,8 @@
 
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="18">
+
+            <!-- Header -->
             <Label Text="{Binding PageTitle}"
                    Style="{StaticResource Headline}"
                    SemanticProperties.HeadingLevel="Level1" />
@@ -16,20 +18,98 @@
                    SemanticProperties.HeadingLevel="Level2" />
 
             <Label Text="{Binding RealmSummary}" />
+            <Label Text="{Binding TreasurySummary}" />
 
-            <Border Padding="16">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="16" />
-                </Border.StrokeShape>
-                <VerticalStackLayout Spacing="6">
-                    <Label Text="Treasury"
-                           FontAttributes="Bold"
-                           FontSize="20" />
-                    <Label Text="{Binding Treasury.FundsSummary}" />
-                    <Label Text="{Binding Treasury.TaxIncomeSummary}" />
-                </VerticalStackLayout>
-            </Border>
+            <!-- Turn Control -->
+            <Button Text="Advance Turn"
+                    Command="{Binding AdvanceTurnCommand}"
+                    HorizontalOptions="Start" />
 
+            <!-- Simulation State -->
+            <Label Text="Mortal Realm Simulation"
+                   FontAttributes="Bold"
+                   FontSize="20" />
+
+            <Label Text="{Binding RealmSummary}"
+                   FontAttributes="Italic" />
+
+            <!-- Town Simulation Cards -->
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding TownSimulations}"
+                                 Spacing="12">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="viewModels:TownSimulationCardViewModel">
+                        <Border Padding="14">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="14" />
+                            </Border.StrokeShape>
+                             <VerticalStackLayout Spacing="4">
+                                 <Label Text="{Binding TownName}" FontAttributes="Bold" FontSize="16" />
+                                 <Label Text="{Binding PopulationSummary}" />
+                                 <Label Text="{Binding FoodBalanceSummary}" />
+                                 <Label Text="{Binding RecruitmentPoolSummary}" />
+                                 <Label Text="{Binding RecruitmentImpactSummary}" />
+                                 <Label Text="{Binding ChangeSummary}" FontAttributes="Bold" />
+                             </VerticalStackLayout>
+                         </Border>
+                     </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
+            <!-- Turn Events -->
+            <Label Text="Turn Events"
+                   FontAttributes="Bold"
+                   FontSize="20"
+                   IsVisible="{Binding HasTurnEvents}" />
+
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding TurnEvents}"
+                                 Spacing="8"
+                                 IsVisible="{Binding HasTurnEvents}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="viewModels:TurnEventViewModel">
+                        <Label>
+                            <Label.FormattedText>
+                                <FormattedString>
+                                    <Span Text="{Binding TownName}" FontAttributes="Bold" />
+                                    <Span Text=": " />
+                                    <Span Text="{Binding PopulationChange}" />
+                                    <Span Text=" | " />
+                                     <Span Text="{Binding ChangeReason}" />
+                                     <Span Text=" | Recruitment: " />
+                                     <Span Text="{Binding RecruitmentLoss}" />
+                                     <Span Text=" | Food: " />
+                                     <Span Text="{Binding FoodBalance}" />
+                                 </FormattedString>
+                             </Label.FormattedText>
+                        </Label>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
+            <!-- Recruitment Events -->
+            <Label Text="Sect Recruitment"
+                   FontAttributes="Bold"
+                   FontSize="20"
+                   IsVisible="{Binding HasRecruitmentEvents}" />
+
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding RecruitmentEvents}"
+                                 Spacing="8"
+                                 IsVisible="{Binding HasRecruitmentEvents}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="viewModels:RecruitmentEventViewModel">
+                        <Label>
+                            <Label.FormattedText>
+                                <FormattedString>
+                                    <Span Text="{Binding SectName}" FontAttributes="Bold" />
+                                    <Span Text=": " />
+                                    <Span Text="{Binding RecruitsSummary}" />
+                                </FormattedString>
+                            </Label.FormattedText>
+                        </Label>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
+            <!-- Regions -->
             <Label Text="Regions"
                    FontAttributes="Bold"
                    FontSize="20" />
@@ -53,6 +133,7 @@
                 </BindableLayout.ItemTemplate>
             </VerticalStackLayout>
 
+            <!-- Mortal Towns -->
             <Label Text="Mortal Towns"
                    FontAttributes="Bold"
                    FontSize="20" />
@@ -77,6 +158,7 @@
                 </BindableLayout.ItemTemplate>
             </VerticalStackLayout>
 
+            <!-- Sects -->
             <Label Text="Sects"
                    FontAttributes="Bold"
                    FontSize="20" />
@@ -89,17 +171,19 @@
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="14" />
                             </Border.StrokeShape>
-                            <VerticalStackLayout Spacing="4">
-                                <Label Text="{Binding Name}" FontAttributes="Bold" />
-                                <Label Text="{Binding LocationSummary}" />
-                                <Label Text="{Binding FinanceSummary}" />
-                                <Label Text="{Binding OutputSummary}" />
-                            </VerticalStackLayout>
-                        </Border>
-                    </DataTemplate>
+                             <VerticalStackLayout Spacing="4">
+                                 <Label Text="{Binding Name}" FontAttributes="Bold" />
+                                 <Label Text="{Binding LocationSummary}" />
+                                 <Label Text="{Binding FinanceSummary}" />
+                                 <Label Text="{Binding RecruitmentSummary}" />
+                                 <Label Text="{Binding OutputSummary}" />
+                             </VerticalStackLayout>
+                         </Border>
+                     </DataTemplate>
                 </BindableLayout.ItemTemplate>
             </VerticalStackLayout>
 
+            <!-- Ministries -->
             <Label Text="Ministries"
                    FontAttributes="Bold"
                    FontSize="20" />
@@ -124,6 +208,7 @@
                     </DataTemplate>
                 </BindableLayout.ItemTemplate>
             </VerticalStackLayout>
+
         </VerticalStackLayout>
     </ScrollView>
 

@@ -5,7 +5,7 @@ Use this file to track implementation status for every planned increment. Update
 | Task | Phase | Deliverable | Status | Owner | Notes |
 |---|---|---|---|---|---|
 | 1.1 | Prototype Closed Loop | Core Data Foundations | Done | Copilot | Refined the task brief, added typed world-state models, seeded an in-memory realm, and replaced the template page with a read-only foundation dashboard. |
-| 1.2 | Prototype Closed Loop | Mortal Realm Baseline Simulation | Not Started | - | - |
+| 1.2 | Prototype Closed Loop | Mortal Realm Baseline Simulation | Done | rio-csharp | Added food consumption/production, natural population growth/decline, sect recruitment flow, and turn-step simulation service. |
 | 1.3 | Prototype Closed Loop | Mortal Industry Simulation | Not Started | - | - |
 | 1.4 | Prototype Closed Loop | Mortal Taxation Loop | Not Started | - | - |
 | 1.5 | Prototype Closed Loop | Sect Baseline State | Not Started | - | - |

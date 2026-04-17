@@ -45,6 +45,8 @@ namespace CoCity.Foundation.Services
                     RegionId: "region.azure-river",
                     Name: "Azure Ford",
                     Population: 18200,
+                    FoodConsumptionPerCapita: 10,
+                    FoodProduction: 210000,
                     Industries: ImmutableArray.Create(
                         new IndustryAllocation(MortalIndustryType.Agriculture, 45),
                         new IndustryAllocation(MortalIndustryType.Handicrafts, 30),
@@ -58,6 +60,8 @@ namespace CoCity.Foundation.Services
                     RegionId: "region.azure-river",
                     Name: "Gold Reed Market",
                     Population: 13400,
+                    FoodConsumptionPerCapita: 10,
+                    FoodProduction: 150000,
                     Industries: ImmutableArray.Create(
                         new IndustryAllocation(MortalIndustryType.Agriculture, 30),
                         new IndustryAllocation(MortalIndustryType.Handicrafts, 25),
@@ -71,6 +75,8 @@ namespace CoCity.Foundation.Services
                     RegionId: "region.redcliff-frontier",
                     Name: "Redcliff Garrison",
                     Population: 9600,
+                    FoodConsumptionPerCapita: 12,
+                    FoodProduction: 85000,
                     Industries: ImmutableArray.Create(
                         new IndustryAllocation(MortalIndustryType.Agriculture, 25),
                         new IndustryAllocation(MortalIndustryType.Handicrafts, 45),
@@ -84,6 +90,8 @@ namespace CoCity.Foundation.Services
                     RegionId: "region.mistwood-heartland",
                     Name: "Mistwood Harbor",
                     Population: 15700,
+                    FoodConsumptionPerCapita: 9,
+                    FoodProduction: 175000,
                     Industries: ImmutableArray.Create(
                         new IndustryAllocation(MortalIndustryType.Agriculture, 40),
                         new IndustryAllocation(MortalIndustryType.Handicrafts, 35),
