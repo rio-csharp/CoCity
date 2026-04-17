@@ -54,7 +54,11 @@ namespace CoCity.Foundation.Services
                     Output: ImmutableArray.Create(
                         new OutputMetric("Grain", 340, "loads"),
                         new OutputMetric("Paper and ink", 96, "bundles"),
-                        new OutputMetric("Market surplus", 72, "taels"))),
+                        new OutputMetric("Market surplus", 72, "taels")),
+                    BaseOutputPerWorker: new IndustryBaseOutputRates(
+                        AgriculturePerWorker: 10,
+                        HandicraftsPerWorker: 6,
+                        CommercePerWorker: 4)),
                 new MortalTownState(
                     Id: "town.gold-reed-market",
                     RegionId: "region.azure-river",
@@ -69,7 +73,11 @@ namespace CoCity.Foundation.Services
                     Output: ImmutableArray.Create(
                         new OutputMetric("River grain", 190, "loads"),
                         new OutputMetric("Trade contracts", 44, "deals"),
-                        new OutputMetric("Transit taxes", 58, "taels"))),
+                        new OutputMetric("Transit taxes", 58, "taels")),
+                    BaseOutputPerWorker: new IndustryBaseOutputRates(
+                        AgriculturePerWorker: 8,
+                        HandicraftsPerWorker: 5,
+                        CommercePerWorker: 5)),
                 new MortalTownState(
                     Id: "town.redcliff-garrison",
                     RegionId: "region.redcliff-frontier",
@@ -84,7 +92,11 @@ namespace CoCity.Foundation.Services
                     Output: ImmutableArray.Create(
                         new OutputMetric("Hard grain", 110, "loads"),
                         new OutputMetric("Mining tools", 68, "sets"),
-                        new OutputMetric("Border tolls", 39, "taels"))),
+                        new OutputMetric("Border tolls", 39, "taels")),
+                    BaseOutputPerWorker: new IndustryBaseOutputRates(
+                        AgriculturePerWorker: 7,
+                        HandicraftsPerWorker: 7,
+                        CommercePerWorker: 3)),
                 new MortalTownState(
                     Id: "town.mistwood-harbor",
                     RegionId: "region.mistwood-heartland",
@@ -99,7 +111,11 @@ namespace CoCity.Foundation.Services
                     Output: ImmutableArray.Create(
                         new OutputMetric("Medicinal herbs", 128, "crates"),
                         new OutputMetric("Timber goods", 74, "bundles"),
-                        new OutputMetric("Port duties", 51, "taels"))));
+                        new OutputMetric("Port duties", 51, "taels")),
+                    BaseOutputPerWorker: new IndustryBaseOutputRates(
+                        AgriculturePerWorker: 9,
+                        HandicraftsPerWorker: 6,
+                        CommercePerWorker: 4)));
 
             var sects = ImmutableArray.Create(
                 new SectState(
