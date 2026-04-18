@@ -215,4 +215,46 @@ namespace CoCity.Foundation
         decimal StartingFunds,
         decimal FundsSpent,
         decimal FundsRemaining);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Taxation simulation model
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public enum TaxRateLevel
+    {
+        Light,
+        Standard,
+        Heavy
+    }
+
+    public sealed record RealmTaxationState(
+        decimal CurrentTreasuryFunds,
+        decimal LastCollectedRevenue,
+        TaxRateLevel SelectedTaxRate,
+        decimal ProjectedRevenue,
+        IReadOnlyList<TownTaxationState> Towns);
+
+    public sealed record TownTaxationState(
+        string TownId,
+        string TownName,
+        decimal GrossTaxBase,
+        decimal CollectedRevenue,
+        int StabilityDelta,
+        string StabilitySummary);
+
+    public sealed record TaxationTurnReport(
+        int TurnNumber,
+        TaxRateLevel SelectedTaxRate,
+        decimal TreasuryBeforeCollection,
+        decimal CollectedRevenue,
+        decimal TreasuryAfterCollection,
+        IReadOnlyList<TownTaxationEvent> TownEvents);
+
+    public sealed record TownTaxationEvent(
+        string TownId,
+        string TownName,
+        decimal GrossTaxBase,
+        decimal CollectedRevenue,
+        int StabilityDelta,
+        string StabilitySummary);
 }

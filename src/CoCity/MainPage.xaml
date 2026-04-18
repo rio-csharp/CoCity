@@ -19,6 +19,18 @@
 
             <Label Text="{Binding RealmSummary}" />
             <Label Text="{Binding TreasurySummary}" />
+            <Label Text="{Binding TaxRateSummary}" />
+            <Label Text="{Binding TaxRevenueSummary}" />
+            <Label Text="{Binding TaxStabilitySummary}" />
+
+            <HorizontalStackLayout Spacing="12">
+                <Button Text="Lower Tax"
+                        Command="{Binding DecreaseTaxRateCommand}"
+                        HorizontalOptions="Start" />
+                <Button Text="Raise Tax"
+                        Command="{Binding IncreaseTaxRateCommand}"
+                        HorizontalOptions="Start" />
+            </HorizontalStackLayout>
 
             <!-- Turn Control -->
             <Button Text="Advance Turn"
@@ -77,6 +89,32 @@
                                 <Label Text="{Binding GovernmentEfficiencySummary}" />
                                 <Label Text="{Binding NetOutputSummary}" />
                                 <Label Text="{Binding PurchasableSurplusSummary}" FontAttributes="Bold" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
+            <!-- Taxation State -->
+            <Label Text="Mortal Taxation"
+                   FontAttributes="Bold"
+                   FontSize="20"
+                   IsVisible="{Binding HasTaxationEvents}" />
+
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding TownTaxations}"
+                                 Spacing="12"
+                                 IsVisible="{Binding HasTaxationEvents}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="viewModels:TownTaxationCardViewModel">
+                        <Border Padding="14">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="14" />
+                            </Border.StrokeShape>
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="{Binding TownName}" FontAttributes="Bold" FontSize="16" />
+                                <Label Text="{Binding GrossTaxBaseSummary}" />
+                                <Label Text="{Binding CollectedRevenueSummary}" />
+                                <Label Text="{Binding StabilitySummary}" FontAttributes="Bold" />
                             </VerticalStackLayout>
                         </Border>
                     </DataTemplate>

@@ -11,39 +11,59 @@ namespace CoCity.ViewModels
         private readonly RealmState _foundation;
         private readonly IMortalRealmSimulationService _simulationService;
         private readonly IMortalIndustrySimulationService _industryService;
+        private readonly IMortalTaxationSimulationService _taxationService;
         private readonly IReadOnlyDictionary<string, string> _regionNamesById;
         private readonly IReadOnlyDictionary<string, MortalTownState> _townsById;
         private MortalRealmState _simulationState;
         private IReadOnlyList<MortalTownIndustryState> _industryStates;
+        private RealmTaxationState _taxationState;
         private TurnReport? _lastReport;
+        private TaxationTurnReport? _lastTaxationReport;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public MainPageViewModel(
             ICoreDataFoundationService foundationService,
             IMortalRealmSimulationService simulationService,
-            IMortalIndustrySimulationService industryService)
+            IMortalIndustrySimulationService industryService,
+            IMortalTaxationSimulationService taxationService)
         {
             _simulationService = simulationService;
             _industryService = industryService;
+            _taxationService = taxationService;
             _foundation = foundationService.GetInitialState();
             _regionNamesById = _foundation.Regions.ToDictionary(region => region.Id, region => region.Name);
             _townsById = _foundation.Towns.ToDictionary(town => town.Id);
             _simulationState = _simulationService.Initialize(_foundation);
             _industryStates = _industryService.Initialize(_foundation, _foundation.Ministries);
+            _taxationState = _taxationService.Initialize(_foundation, _simulationState, _industryStates);
 
             AdvanceTurnCommand = new Microsoft.Maui.Controls.Command(ExecuteAdvanceTurn);
+            IncreaseTaxRateCommand = new Microsoft.Maui.Controls.Command(ExecuteIncreaseTaxRate);
+            DecreaseTaxRateCommand = new Microsoft.Maui.Controls.Command(ExecuteDecreaseTaxRate);
             BuildDisplayState();
         }
 
-        public string PageTitle => "Mortal Realm Simulation";
-        public string PageSubtitle => "Task 1.3 adds industry output calculation: labor force drives production, government efficiency modulates output.";
+        public string PageTitle => "Mortal Realm Taxation";
+        public string PageSubtitle => "Task 1.4 adds tax collection, adjustable tax rates, treasury growth, and a baseline mortal stability effect.";
         public string RealmSummary => $"{_foundation.RealmName} — Turn {SimulationTurnNumber}";
         public int SimulationTurnNumber => _simulationState.TurnNumber;
+        public string TaxRateSummary => $"Tax rate: {TaxationPolicyCatalog.Get(_taxationState.SelectedTaxRate).DisplayName}";
+        public string TaxRevenueSummary => _lastTaxationReport is null
+            ? $"Projected collection at current rate: {FormatNumber(_taxationState.ProjectedRevenue)} taels | Baseline plan: {FormatNumber(_foundation.Treasury.BaselineTaxIncome)} taels"
+            : $"Last collection: {FormatNumber(_taxationState.LastCollectedRevenue)} taels | Next projection: {FormatNumber(_taxationState.ProjectedRevenue)} taels";
+        public string TaxStabilitySummary
+        {
+            get
+            {
+                var policy = TaxationPolicyCatalog.Get(_taxationState.SelectedTaxRate);
+                return $"Mortal stability effect: {FormatSignedNumber(policy.StabilityDelta)} ({policy.StabilitySummary})";
+            }
+        }
 
         public string TreasurySummary => SimulationTurnNumber == 0
-            ? $"State reserves: {FormatNumber(_foundation.Treasury.Funds)} taels"
-            : $"State reserves: {FormatNumber(_foundation.Treasury.Funds)} taels | Turn {SimulationTurnNumber} complete";
+            ? $"State reserves: {FormatNumber(_taxationState.CurrentTreasuryFunds)} taels"
+            : $"State reserves: {FormatNumber(_taxationState.CurrentTreasuryFunds)} taels | Turn {SimulationTurnNumber} complete";
 
         public IReadOnlyList<RegionCardViewModel> Regions { get; private set; } = [];
         public IReadOnlyList<TownCardViewModel> Towns { get; private set; } = [];
@@ -51,29 +71,41 @@ namespace CoCity.ViewModels
         public IReadOnlyList<MinistryCardViewModel> Ministries { get; private set; } = [];
         public IReadOnlyList<TownSimulationCardViewModel> TownSimulations { get; private set; } = [];
         public IReadOnlyList<TownIndustryCardViewModel> TownIndustries { get; private set; } = [];
+        public IReadOnlyList<TownTaxationCardViewModel> TownTaxations { get; private set; } = [];
         public IReadOnlyList<RecruitmentEventViewModel> RecruitmentEvents { get; private set; } = [];
         public IReadOnlyList<TurnEventViewModel> TurnEvents { get; private set; } = [];
 
         public bool HasTurnEvents => TurnEvents.Count > 0;
         public bool HasRecruitmentEvents => RecruitmentEvents.Count > 0;
         public bool HasIndustryEvents => TownIndustries.Count > 0;
+        public bool HasTaxationEvents => TownTaxations.Count > 0;
 
         public System.Windows.Input.ICommand AdvanceTurnCommand { get; }
+        public System.Windows.Input.ICommand IncreaseTaxRateCommand { get; }
+        public System.Windows.Input.ICommand DecreaseTaxRateCommand { get; }
 
         private void ExecuteAdvanceTurn()
         {
-            var result = _simulationService.Step(_foundation, _simulationState);
+            var result = _simulationService.Step(_foundation, _simulationState, _taxationState.SelectedTaxRate);
             _simulationState = result.NextState;
             _lastReport = result.Report;
 
             var industryResult = _industryService.Step(_foundation, _foundation.Ministries, _simulationState, _industryStates);
             _industryStates = industryResult.NextStates;
+            var taxationResult = _taxationService.Step(_taxationState, _simulationState, _industryStates);
+            _taxationState = taxationResult.NextState;
+            _lastTaxationReport = taxationResult.Report;
 
             BuildDisplayState();
 
+            OnPropertyChanged(nameof(PageTitle));
+            OnPropertyChanged(nameof(PageSubtitle));
             OnPropertyChanged(nameof(SimulationTurnNumber));
             OnPropertyChanged(nameof(RealmSummary));
             OnPropertyChanged(nameof(TreasurySummary));
+            OnPropertyChanged(nameof(TaxRateSummary));
+            OnPropertyChanged(nameof(TaxRevenueSummary));
+            OnPropertyChanged(nameof(TaxStabilitySummary));
             OnPropertyChanged(nameof(Towns));
             OnPropertyChanged(nameof(Sects));
             OnPropertyChanged(nameof(TownSimulations));
@@ -83,6 +115,32 @@ namespace CoCity.ViewModels
             OnPropertyChanged(nameof(HasRecruitmentEvents));
             OnPropertyChanged(nameof(TownIndustries));
             OnPropertyChanged(nameof(HasIndustryEvents));
+            OnPropertyChanged(nameof(TownTaxations));
+            OnPropertyChanged(nameof(HasTaxationEvents));
+        }
+
+        private void ExecuteIncreaseTaxRate()
+            => SetTaxRate(TaxationPolicyCatalog.Raise(_taxationState.SelectedTaxRate));
+
+        private void ExecuteDecreaseTaxRate()
+            => SetTaxRate(TaxationPolicyCatalog.Lower(_taxationState.SelectedTaxRate));
+
+        private void SetTaxRate(TaxRateLevel taxRate)
+        {
+            if (taxRate == _taxationState.SelectedTaxRate)
+            {
+                return;
+            }
+
+            _taxationState = _taxationService.SetTaxRate(_taxationState, _simulationState, _industryStates, taxRate);
+            BuildDisplayState();
+
+            OnPropertyChanged(nameof(TreasurySummary));
+            OnPropertyChanged(nameof(TaxRateSummary));
+            OnPropertyChanged(nameof(TaxRevenueSummary));
+            OnPropertyChanged(nameof(TaxStabilitySummary));
+            OnPropertyChanged(nameof(TownTaxations));
+            OnPropertyChanged(nameof(HasTaxationEvents));
         }
 
         private void BuildDisplayState()
@@ -150,6 +208,14 @@ namespace CoCity.ViewModels
                     GovernmentEfficiencySummary: $"Government efficiency: {industry.GovernmentEfficiency:F2}x",
                     NetOutputSummary: $"Net output: Agriculture {FormatNumber(industry.NetOutput.AgricultureUnits)} | Handicrafts {FormatNumber(industry.NetOutput.HandicraftsUnits)} | Commerce {FormatNumber(industry.NetOutput.CommerceUnits)}",
                     PurchasableSurplusSummary: $"Available for purchase: Agriculture {FormatNumber(industry.PurchasableSurplus.AgricultureUnits)} | Handicrafts {FormatNumber(industry.PurchasableSurplus.HandicraftsUnits)} | Commerce {FormatNumber(industry.PurchasableSurplus.CommerceUnits)}"))
+                .ToImmutableArray();
+
+            TownTaxations = _taxationState.Towns
+                .Select(taxation => new TownTaxationCardViewModel(
+                    TownName: taxation.TownName,
+                    GrossTaxBaseSummary: $"Gross tax base: {FormatNumber(taxation.GrossTaxBase)} taels",
+                    CollectedRevenueSummary: $"Projected collection: {FormatNumber(taxation.CollectedRevenue)} taels",
+                    StabilitySummary: $"Stability effect: {FormatSignedNumber(taxation.StabilityDelta)} ({taxation.StabilitySummary})"))
                 .ToImmutableArray();
 
             if (_lastReport is null)
@@ -261,4 +327,10 @@ namespace CoCity.ViewModels
         string GovernmentEfficiencySummary,
         string NetOutputSummary,
         string PurchasableSurplusSummary);
+
+    public sealed record TownTaxationCardViewModel(
+        string TownName,
+        string GrossTaxBaseSummary,
+        string CollectedRevenueSummary,
+        string StabilitySummary);
 }

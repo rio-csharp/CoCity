@@ -7,7 +7,7 @@ Use this file to track implementation status for every planned increment. Update
 | 1.1 | Prototype Closed Loop | Core Data Foundations | Done | Copilot | Refined the task brief, added typed world-state models, seeded an in-memory realm, and replaced the template page with a read-only foundation dashboard. |
 | 1.2 | Prototype Closed Loop | Mortal Realm Baseline Simulation | Done | rio-csharp | Added food consumption/production, natural population growth/decline, sect recruitment flow, and turn-step simulation service. |
 | 1.3 | Prototype Closed Loop | Mortal Industry Simulation | Done | Copilot | Completed deterministic industry state/output calculation, added a request-driven sect purchase flow with settlement reporting, surfaced town industry panels in the app, and added unit plus integration coverage for production and purchase behavior. |
-| 1.4 | Prototype Closed Loop | Mortal Taxation Loop | Not Started | - | - |
+| 1.4 | Prototype Closed Loop | Mortal Taxation Loop | Done | Copilot | Added the baseline tax loop with adjustable rate controls, tax-driven treasury accumulation, lightweight stability pressure, and regression coverage while staying out of 1.11 automation and the full 2.14 stability system. |
 | 1.5 | Prototype Closed Loop | Sect Baseline State | Not Started | - | - |
 | 1.6 | Prototype Closed Loop | Sect Recruitment Workflow | Not Started | - | - |
 | 1.7 | Prototype Closed Loop | Sect Autonomous Operations | Not Started | - | - |

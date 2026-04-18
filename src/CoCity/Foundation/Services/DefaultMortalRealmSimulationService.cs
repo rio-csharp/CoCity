@@ -24,15 +24,16 @@ namespace CoCity.Foundation.Services
                 TurnNumber: 0);
         }
 
-        public TurnResult Step(RealmState foundation, MortalRealmState currentState)
+        public TurnResult Step(RealmState foundation, MortalRealmState currentState, TaxRateLevel taxRate = TaxRateLevel.Standard)
         {
             var nextTurn = currentState.TurnNumber + 1;
+            var taxPolicy = TaxationPolicyCatalog.Get(taxRate);
             var townDefinitions = foundation.Towns.ToDictionary(town => town.Id);
             var regionTownIdsByRegion = foundation.Regions.ToDictionary(region => region.Id, region => region.TownIds);
             var currentTowns = currentState.Towns.ToDictionary(town => town.TownId);
 
             var naturalResults = foundation.Towns
-                .Select(town => ResolveNaturalChange(town, currentTowns[town.Id]))
+                .Select(town => ResolveNaturalChange(town, currentTowns[town.Id], taxPolicy))
                 .ToImmutableArray();
             var naturalResultsByTownId = naturalResults.ToDictionary(result => result.TownId);
 
@@ -101,7 +102,7 @@ namespace CoCity.Foundation.Services
                 RecruitmentPool: CalculateRecruitmentPool(town.Population),
                 PopulationChange: 0,
                 RecruitsLostLastTurn: 0,
-                ChangeReason: DescribeNaturalReason(foodBalance, 0));
+                ChangeReason: DescribeNaturalReason(foodBalance, 0, TaxationPolicyCatalog.Get(TaxRateLevel.Standard)));
         }
 
         private static ImmutableArray<SectRecruitmentEvent> ResolveSectRecruitment(
@@ -177,14 +178,16 @@ namespace CoCity.Foundation.Services
 
         private static NaturalTownResult ResolveNaturalChange(
             MortalTownState town,
-            MortalTownSimulationState currentTown)
+            MortalTownSimulationState currentTown,
+            TaxRatePolicy taxPolicy)
         {
             var currentPopulation = currentTown.CurrentPopulation;
             var foodBalance = CalculateFoodBalance(town, currentPopulation);
 
             if (foodBalance > 0)
             {
-                var naturalGrowth = Math.Max(1, (int)Math.Floor(currentPopulation * GrowthRateWhenSatisfied));
+                var adjustedGrowthRate = Math.Max(0.001m, GrowthRateWhenSatisfied + taxPolicy.GrowthRateModifier);
+                var naturalGrowth = Math.Max(1, (int)Math.Floor(currentPopulation * adjustedGrowthRate));
                 var growthSupportedByFood = foodBalance / town.FoodConsumptionPerCapita;
                 var actualGrowth = Math.Min(naturalGrowth, growthSupportedByFood);
                 var populationAfterNaturalChange = currentPopulation + actualGrowth;
@@ -195,13 +198,14 @@ namespace CoCity.Foundation.Services
                     PreviousPopulation: currentPopulation,
                     PopulationAfterNaturalChange: populationAfterNaturalChange,
                     RecruitmentPoolBeforeRecruitment: CalculateRecruitmentPool(populationAfterNaturalChange),
-                    NaturalReason: DescribeNaturalReason(foodBalance, actualGrowth));
+                    NaturalReason: DescribeNaturalReason(foodBalance, actualGrowth, taxPolicy));
             }
 
             if (foodBalance < 0)
             {
                 var populationShortfall = (int)Math.Ceiling((decimal)(-foodBalance) / town.FoodConsumptionPerCapita);
-                var naturalDecline = Math.Max(1, (int)Math.Ceiling(currentPopulation * DeclineRateWhenUnsatisfied));
+                var adjustedDeclineRate = Math.Max(0.005m, DeclineRateWhenUnsatisfied + taxPolicy.DeclineRateModifier);
+                var naturalDecline = Math.Max(1, (int)Math.Ceiling(currentPopulation * adjustedDeclineRate));
                 var actualDecline = Math.Min(currentPopulation - MinimumPopulation, Math.Max(populationShortfall, naturalDecline));
                 var populationAfterNaturalChange = Math.Max(MinimumPopulation, currentPopulation - actualDecline);
 
@@ -211,7 +215,7 @@ namespace CoCity.Foundation.Services
                     PreviousPopulation: currentPopulation,
                     PopulationAfterNaturalChange: populationAfterNaturalChange,
                     RecruitmentPoolBeforeRecruitment: CalculateRecruitmentPool(populationAfterNaturalChange),
-                    NaturalReason: DescribeNaturalReason(foodBalance, -actualDecline));
+                    NaturalReason: DescribeNaturalReason(foodBalance, -actualDecline, taxPolicy));
             }
 
             return new NaturalTownResult(
@@ -220,7 +224,7 @@ namespace CoCity.Foundation.Services
                 PreviousPopulation: currentPopulation,
                 PopulationAfterNaturalChange: currentPopulation,
                 RecruitmentPoolBeforeRecruitment: CalculateRecruitmentPool(currentPopulation),
-                NaturalReason: DescribeNaturalReason(foodBalance, 0));
+                NaturalReason: DescribeNaturalReason(foodBalance, 0, taxPolicy));
         }
 
         private static int CalculateFoodBalance(MortalTownState town, int population)
@@ -231,16 +235,20 @@ namespace CoCity.Foundation.Services
                 ? 0
                 : (int)Math.Floor((population - MinimumPopulation) * RecruitablesRate);
 
-        private static string DescribeNaturalReason(int foodBalance, int naturalChange)
+        private static string DescribeNaturalReason(int foodBalance, int naturalChange, TaxRatePolicy taxPolicy)
         {
-            if (foodBalance < 0)
+            var baselineReason = foodBalance < 0
+                ? "Hardship"
+                : naturalChange > 0
+                    ? "Prosperity"
+                    : "Stable";
+
+            if (string.IsNullOrWhiteSpace(taxPolicy.ChangeReasonSuffix))
             {
-                return "Hardship";
+                return baselineReason;
             }
 
-            return naturalChange > 0
-                ? "Prosperity"
-                : "Stable";
+            return $"{baselineReason}; {taxPolicy.ChangeReasonSuffix}";
         }
 
         private static string BuildChangeReason(string naturalReason, int recruitsLost)

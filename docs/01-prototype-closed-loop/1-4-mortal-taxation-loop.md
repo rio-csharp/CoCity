@@ -13,6 +13,12 @@ Implement the scope below as production-ready game behavior rather than temporar
 - Tax rates affect mortal stability.
 - Collected taxes flow into the national treasury.
 
+## Scope Boundaries
+- This task establishes the **baseline taxation loop** for the mortal realm. It may expose a narrow tax-rate control needed to demonstrate the loop, but it must not expand into the broader player action surface reserved for Task 1.12.
+- Implement direct taxation rules and treasury accumulation without introducing the ministry automation layer reserved for Task 1.11.
+- Represent tax-driven stability impact in a lightweight, deterministic way suitable for the prototype, but do **not** build the full mortal stability system reserved for Task 2.14.
+- Do **not** implement sect taxation, tax exemptions, unrest events, or ministry success/failure handling in this task.
+
 ## Code Design
 - Prioritize deterministic turn resolution and highly visible state changes.
 - Keep administrative logic, world simulation, and presentation concerns separated so the prototype can expand without rewrites.
