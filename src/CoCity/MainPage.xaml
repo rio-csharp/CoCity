@@ -7,7 +7,9 @@
 
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="18">
-            <Border Padding="20">
+            <Border Padding="20"
+                    Background="{StaticResource HeroPanelBackgroundBrush}"
+                    Stroke="{AppThemeBinding Light={StaticResource DayAction}, Dark={StaticResource NightAction}}">
                 <Border.StrokeShape>
                     <RoundRectangle CornerRadius="18" />
                 </Border.StrokeShape>
@@ -30,6 +32,7 @@
                     <Label Text="{Binding TaxRateSummary}" />
                     <Label Text="{Binding TaxRevenueSummary}" />
                     <Label Text="{Binding TaxStabilitySummary}" />
+                    <Label Text="{Binding ThemeSummary}" />
                     <Label Text="{Binding SectRosterSummary}" />
                     <Label Text="{Binding NationalMortalSummary}" />
                     <Label Text="{Binding NationalMinistrySummary}" />
@@ -49,6 +52,8 @@
                                 Command="{Binding ConstructSectInfrastructureCommand}" />
                         <Button Text="Construct Next Mortal Building"
                                 Command="{Binding ConstructMortalInfrastructureCommand}" />
+                        <Button Text="Toggle Day/Night Theme"
+                                Command="{Binding ToggleThemeCommand}" />
                     </FlexLayout>
 
                     <Label Text="Alerts and Recent Events"
@@ -142,7 +147,8 @@
                            FontAttributes="Bold"
                            FontSize="22" />
                     <Label Text="Funds, population, buildings, output, and sect-side activity stay grouped here so the player can evaluate autonomous power centers quickly."
-                           FontAttributes="Italic" />
+                           FontAttributes="Italic"
+                           TextColor="{AppThemeBinding Light={StaticResource DayMutedText}, Dark={StaticResource NightMutedText}}" />
 
                     <VerticalStackLayout BindableLayout.ItemsSource="{Binding Sects}"
                                          Spacing="12">
@@ -249,7 +255,8 @@
                            FontAttributes="Bold"
                            FontSize="22" />
                     <Label Text="Population, industries, output, and taxation remain together so the player can read the mortal base as one economic surface."
-                           FontAttributes="Italic" />
+                           FontAttributes="Italic"
+                           TextColor="{AppThemeBinding Light={StaticResource DayMutedText}, Dark={StaticResource NightMutedText}}" />
 
                     <Label Text="Mortal Towns"
                            FontAttributes="Bold"
@@ -393,7 +400,8 @@
                            FontAttributes="Bold"
                            FontSize="22" />
                     <Label Text="Officials, authority, handling standards, and escalations stay visible here so the player can govern without losing administrative context."
-                           FontAttributes="Italic" />
+                           FontAttributes="Italic"
+                           TextColor="{AppThemeBinding Light={StaticResource DayMutedText}, Dark={StaticResource NightMutedText}}" />
 
                     <Label Text="{Binding SelectedMinistrySummary}" />
                     <Label Text="{Binding SelectedMinistryPolicySummary}" />

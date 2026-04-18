@@ -30,6 +30,7 @@ namespace CoCity
             builder.Services.AddSingleton<IPlayerActionService, DefaultPlayerActionService>();
             builder.Services.AddSingleton<ITurnAdvancementPipelineService, DefaultTurnAdvancementPipelineService>();
             builder.Services.AddSingleton<IRealmNotificationService, DefaultRealmNotificationService>();
+            builder.Services.AddSingleton<IThemeFoundationService, DefaultThemeFoundationService>();
             builder.Services.AddTransient<MainPageViewModel>();
             builder.Services.AddTransient<MainPage>();
 

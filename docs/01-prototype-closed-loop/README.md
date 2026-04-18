@@ -27,6 +27,9 @@ The player should feel they are governing a cultivation state rather than microm
 - [1.13 - Turn Advancement Pipeline](./1-13-turn-advancement-pipeline.md)
 - [1.14 - Baseline User Interface](./1-14-baseline-user-interface.md)
 - [1.15 - Baseline Events and Alerts](./1-15-baseline-events-and-alerts.md)
+- [1.16 - Theme Foundation](./1-16-theme-foundation.md)
+- [1.17 - Localization and Language Switching](./1-17-localization-and-language-switching.md)
+- [1.18 - Gameplay UI Redesign](./1-18-gameplay-ui-redesign.md)
 
 ## Exit Standard
-Playable for 30 to 60 turns with no dead loop and with enough information for the player to understand why the state changed.
+Playable for 30 to 60 turns with no dead loop, enough information for the player to understand why the state changed, baseline day/night presentation support, baseline Chinese/English language switching, and a game-oriented interface that is more inviting than a raw debug dashboard.

@@ -18,6 +18,7 @@ namespace CoCity.ViewModels
         private readonly IPlayerActionService _playerActionService;
         private readonly ITurnAdvancementPipelineService _turnAdvancementPipelineService;
         private readonly IRealmNotificationService _notificationService;
+        private readonly IThemeFoundationService _themeService;
         private readonly IReadOnlyDictionary<string, string> _regionNamesById;
         private readonly IReadOnlyDictionary<string, MortalTownState> _townsById;
         private MortalRealmState _simulationState;
@@ -48,7 +49,8 @@ namespace CoCity.ViewModels
             IMinistryFrameworkService ministryFrameworkService,
             IPlayerActionService playerActionService,
             ITurnAdvancementPipelineService turnAdvancementPipelineService,
-            IRealmNotificationService notificationService)
+            IRealmNotificationService notificationService,
+            IThemeFoundationService themeService)
         {
             _simulationService = simulationService;
             _industryService = industryService;
@@ -59,6 +61,7 @@ namespace CoCity.ViewModels
             _playerActionService = playerActionService;
             _turnAdvancementPipelineService = turnAdvancementPipelineService;
             _notificationService = notificationService;
+            _themeService = themeService;
             _foundation = foundationService.GetInitialState();
             _regionNamesById = _foundation.Regions.ToDictionary(region => region.Id, region => region.Name);
             _townsById = _foundation.Towns.ToDictionary(town => town.Id);
@@ -81,13 +84,17 @@ namespace CoCity.ViewModels
             NextPendingRequestCommand = new Microsoft.Maui.Controls.Command(ExecuteNextPendingRequest);
             ApprovePendingRequestCommand = new Microsoft.Maui.Controls.Command(ExecuteApprovePendingRequest);
             RejectPendingRequestCommand = new Microsoft.Maui.Controls.Command(ExecuteRejectPendingRequest);
+            ToggleThemeCommand = new Microsoft.Maui.Controls.Command(ExecuteToggleTheme);
             BuildDisplayState();
         }
 
         public string PageTitle => "Prototype Closed Loop Dashboard";
-        public string PageSubtitle => "Task 1.15 adds a unified baseline alerts and event history layer on top of the closed-loop interface.";
+        public string PageSubtitle => "Task 1.16 establishes reusable day and night presentation themes before the larger gameplay UI redesign.";
         public string RealmSummary => $"{_foundation.RealmName} — Turn {SimulationTurnNumber}";
         public int SimulationTurnNumber => _simulationState.TurnNumber;
+        public string ThemeSummary => _themeService.CurrentTheme == PresentationTheme.Day
+            ? "Theme: Day Court"
+            : "Theme: Night Vigil";
         public string TurnPipelineSummary => _lastTurnPipelineReport is null
             ? "Turn pipeline order: realm simulation -> industry -> sect operations -> buildings -> taxation -> ministries."
             : $"Last turn pipeline resolved: realm simulation, industry, sect operations, buildings, taxation, and ministries for turn {SimulationTurnNumber}.";
@@ -200,6 +207,7 @@ namespace CoCity.ViewModels
         public System.Windows.Input.ICommand NextPendingRequestCommand { get; }
         public System.Windows.Input.ICommand ApprovePendingRequestCommand { get; }
         public System.Windows.Input.ICommand RejectPendingRequestCommand { get; }
+        public System.Windows.Input.ICommand ToggleThemeCommand { get; }
 
         private void ExecuteAdvanceTurn()
         {
@@ -310,6 +318,19 @@ namespace CoCity.ViewModels
 
         private void ExecuteDecreaseTaxRate()
             => SetTaxRate(TaxationPolicyCatalog.Lower(_taxationState.SelectedTaxRate));
+
+        private void ExecuteToggleTheme()
+        {
+            if (Microsoft.Maui.Controls.Application.Current is not App app)
+            {
+                throw new InvalidOperationException("Theme switching requires the MAUI application to be initialized as CoCity.App.");
+            }
+
+            var theme = _themeService.ToggleTheme();
+            app.ApplyPresentationTheme(theme);
+
+            OnPropertyChanged(nameof(ThemeSummary));
+        }
 
         private void SetTaxRate(TaxRateLevel taxRate)
         {
