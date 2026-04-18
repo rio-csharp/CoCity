@@ -16,6 +16,7 @@ namespace CoCity.ViewModels
         private readonly IMortalTaxationSimulationService _taxationService;
         private readonly IMinistryFrameworkService _ministryFrameworkService;
         private readonly IPlayerActionService _playerActionService;
+        private readonly ITurnAdvancementPipelineService _turnAdvancementPipelineService;
         private readonly IReadOnlyDictionary<string, string> _regionNamesById;
         private readonly IReadOnlyDictionary<string, MortalTownState> _townsById;
         private MortalRealmState _simulationState;
@@ -28,6 +29,7 @@ namespace CoCity.ViewModels
         private BuildingReport? _lastBuildingReport;
         private TaxationTurnReport? _lastTaxationReport;
         private MinistryTurnReport? _lastMinistryReport;
+        private TurnAdvancementReport? _lastTurnPipelineReport;
         private string? _selectedMinistryId;
         private int _selectedRequestIndex;
         private string _lastPlayerActionSummary = "No player action taken yet.";
@@ -42,7 +44,8 @@ namespace CoCity.ViewModels
             IBuildingSystemService buildingSystemService,
             IMortalTaxationSimulationService taxationService,
             IMinistryFrameworkService ministryFrameworkService,
-            IPlayerActionService playerActionService)
+            IPlayerActionService playerActionService,
+            ITurnAdvancementPipelineService turnAdvancementPipelineService)
         {
             _simulationService = simulationService;
             _industryService = industryService;
@@ -51,6 +54,7 @@ namespace CoCity.ViewModels
             _taxationService = taxationService;
             _ministryFrameworkService = ministryFrameworkService;
             _playerActionService = playerActionService;
+            _turnAdvancementPipelineService = turnAdvancementPipelineService;
             _foundation = foundationService.GetInitialState();
             _regionNamesById = _foundation.Regions.ToDictionary(region => region.Id, region => region.Name);
             _townsById = _foundation.Towns.ToDictionary(town => town.Id);
@@ -76,9 +80,12 @@ namespace CoCity.ViewModels
         }
 
         public string PageTitle => "Prototype Closed Loop Dashboard";
-        public string PageSubtitle => "Task 1.12 adds player-facing ministry policy controls and manual approval or rejection of escalated requests.";
+        public string PageSubtitle => "Task 1.13 extracts turn advancement into an explicit pipeline with a unified turn result and report surface.";
         public string RealmSummary => $"{_foundation.RealmName} — Turn {SimulationTurnNumber}";
         public int SimulationTurnNumber => _simulationState.TurnNumber;
+        public string TurnPipelineSummary => _lastTurnPipelineReport is null
+            ? "Turn pipeline order: realm simulation -> industry -> sect operations -> buildings -> taxation -> ministries."
+            : $"Last turn pipeline resolved: realm simulation, industry, sect operations, buildings, taxation, and ministries for turn {SimulationTurnNumber}.";
         public string TaxRateSummary => $"Tax rate: {TaxationPolicyCatalog.Get(_taxationState.SelectedTaxRate).DisplayName}";
         public string TaxRevenueSummary => _lastTaxationReport is null
             ? $"Projected collection at current rate: {FormatNumber(_taxationState.ProjectedRevenue)} taels | Baseline plan: {FormatNumber(_foundation.Treasury.BaselineTaxIncome)} taels"
@@ -166,31 +173,26 @@ namespace CoCity.ViewModels
 
         private void ExecuteAdvanceTurn()
         {
-            var realmResult = _simulationService.Step(_foundation, _simulationState, _taxationState.SelectedTaxRate);
-            _lastReport = realmResult.Report;
-
-            var industryResult = _industryService.Step(_foundation, _foundation.Ministries, realmResult.NextState, _industryStates);
-            var sectOperationsResult = _sectOperationsService.Step(_foundation, realmResult.NextState, industryResult.NextStates);
-            var buildingTurnResult = _buildingSystemService.ApplyTurn(
+            var pipelineResult = _turnAdvancementPipelineService.Advance(
                 _foundation,
-                _buildingState,
-                sectOperationsResult.NextSects,
-                sectOperationsResult.NextIndustryStates,
-                _taxationState.CurrentTreasuryFunds);
+                new TurnAdvancementState(
+                    RealmState: _simulationState,
+                    BuildingState: _buildingState,
+                    IndustryStates: _industryStates,
+                    TaxationState: _taxationState,
+                    MinistryState: _ministryState));
 
-            _buildingState = buildingTurnResult.NextState;
-            _simulationState = realmResult.NextState with { Sects = buildingTurnResult.NextSects };
-            _industryStates = buildingTurnResult.NextIndustryStates;
-            _lastSectOperationsReport = sectOperationsResult.Report;
-            _lastBuildingReport = buildingTurnResult.Report;
-
-            var taxationSeedState = _taxationState with { CurrentTreasuryFunds = buildingTurnResult.NextTreasuryFunds };
-            var taxationResult = _taxationService.Step(taxationSeedState, _simulationState, _industryStates);
-            _taxationState = taxationResult.NextState;
-            _lastTaxationReport = taxationResult.Report;
-            var ministryResult = _ministryFrameworkService.Step(_foundation, _ministryState, _simulationState, _buildingState, _taxationState);
-            _ministryState = ministryResult.NextState;
-            _lastMinistryReport = ministryResult.Report;
+            _simulationState = pipelineResult.NextState.RealmState;
+            _buildingState = pipelineResult.NextState.BuildingState;
+            _industryStates = pipelineResult.NextState.IndustryStates;
+            _taxationState = pipelineResult.NextState.TaxationState;
+            _ministryState = pipelineResult.NextState.MinistryState;
+            _lastTurnPipelineReport = pipelineResult.Report;
+            _lastReport = pipelineResult.Report.RealmReport;
+            _lastSectOperationsReport = pipelineResult.Report.SectOperationsReport;
+            _lastBuildingReport = pipelineResult.Report.BuildingReport;
+            _lastTaxationReport = pipelineResult.Report.TaxationReport;
+            _lastMinistryReport = pipelineResult.Report.MinistryReport;
             RefreshSelections();
 
             BuildDisplayState();
@@ -199,6 +201,7 @@ namespace CoCity.ViewModels
             OnPropertyChanged(nameof(PageSubtitle));
             OnPropertyChanged(nameof(SimulationTurnNumber));
             OnPropertyChanged(nameof(RealmSummary));
+            OnPropertyChanged(nameof(TurnPipelineSummary));
             OnPropertyChanged(nameof(TreasurySummary));
             OnPropertyChanged(nameof(TaxRateSummary));
             OnPropertyChanged(nameof(TaxRevenueSummary));
