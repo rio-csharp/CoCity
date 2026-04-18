@@ -11,6 +11,7 @@ namespace CoCity.ViewModels
         private readonly RealmState _foundation;
         private readonly IMortalRealmSimulationService _simulationService;
         private readonly IMortalIndustrySimulationService _industryService;
+        private readonly ISectAutonomousOperationsService _sectOperationsService;
         private readonly IMortalTaxationSimulationService _taxationService;
         private readonly IReadOnlyDictionary<string, string> _regionNamesById;
         private readonly IReadOnlyDictionary<string, MortalTownState> _townsById;
@@ -18,6 +19,7 @@ namespace CoCity.ViewModels
         private IReadOnlyList<MortalTownIndustryState> _industryStates;
         private RealmTaxationState _taxationState;
         private TurnReport? _lastReport;
+        private SectOperationsTurnReport? _lastSectOperationsReport;
         private TaxationTurnReport? _lastTaxationReport;
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -26,10 +28,12 @@ namespace CoCity.ViewModels
             ICoreDataFoundationService foundationService,
             IMortalRealmSimulationService simulationService,
             IMortalIndustrySimulationService industryService,
+            ISectAutonomousOperationsService sectOperationsService,
             IMortalTaxationSimulationService taxationService)
         {
             _simulationService = simulationService;
             _industryService = industryService;
+            _sectOperationsService = sectOperationsService;
             _taxationService = taxationService;
             _foundation = foundationService.GetInitialState();
             _regionNamesById = _foundation.Regions.ToDictionary(region => region.Id, region => region.Name);
@@ -45,7 +49,7 @@ namespace CoCity.ViewModels
         }
 
         public string PageTitle => "Prototype Closed Loop Dashboard";
-        public string PageSubtitle => "Task 1.6 upgrades sect recruitment into a wage-driven workflow with visible hires, wage costs, and sect-fund changes.";
+        public string PageSubtitle => "Task 1.7 adds sect autonomous upkeep, raw-material purchasing, and output decline when funds or inputs run short.";
         public string RealmSummary => $"{_foundation.RealmName} — Turn {SimulationTurnNumber}";
         public int SimulationTurnNumber => _simulationState.TurnNumber;
         public string TaxRateSummary => $"Tax rate: {TaxationPolicyCatalog.Get(_taxationState.SelectedTaxRate).DisplayName}";
@@ -73,10 +77,12 @@ namespace CoCity.ViewModels
         public IReadOnlyList<TownIndustryCardViewModel> TownIndustries { get; private set; } = [];
         public IReadOnlyList<TownTaxationCardViewModel> TownTaxations { get; private set; } = [];
         public IReadOnlyList<RecruitmentEventViewModel> RecruitmentEvents { get; private set; } = [];
+        public IReadOnlyList<SectOperationEventViewModel> SectOperationEvents { get; private set; } = [];
         public IReadOnlyList<TurnEventViewModel> TurnEvents { get; private set; } = [];
 
         public bool HasTurnEvents => TurnEvents.Count > 0;
         public bool HasRecruitmentEvents => RecruitmentEvents.Count > 0;
+        public bool HasSectOperationEvents => SectOperationEvents.Count > 0;
         public bool HasIndustryEvents => TownIndustries.Count > 0;
         public bool HasTaxationEvents => TownTaxations.Count > 0;
 
@@ -86,12 +92,16 @@ namespace CoCity.ViewModels
 
         private void ExecuteAdvanceTurn()
         {
-            var result = _simulationService.Step(_foundation, _simulationState, _taxationState.SelectedTaxRate);
-            _simulationState = result.NextState;
-            _lastReport = result.Report;
+            var realmResult = _simulationService.Step(_foundation, _simulationState, _taxationState.SelectedTaxRate);
+            _lastReport = realmResult.Report;
 
-            var industryResult = _industryService.Step(_foundation, _foundation.Ministries, _simulationState, _industryStates);
-            _industryStates = industryResult.NextStates;
+            var industryResult = _industryService.Step(_foundation, _foundation.Ministries, realmResult.NextState, _industryStates);
+            var sectOperationsResult = _sectOperationsService.Step(_foundation, realmResult.NextState, industryResult.NextStates);
+
+            _simulationState = realmResult.NextState with { Sects = sectOperationsResult.NextSects };
+            _industryStates = sectOperationsResult.NextIndustryStates;
+            _lastSectOperationsReport = sectOperationsResult.Report;
+
             var taxationResult = _taxationService.Step(_taxationState, _simulationState, _industryStates);
             _taxationState = taxationResult.NextState;
             _lastTaxationReport = taxationResult.Report;
@@ -111,8 +121,10 @@ namespace CoCity.ViewModels
             OnPropertyChanged(nameof(TownSimulations));
             OnPropertyChanged(nameof(TurnEvents));
             OnPropertyChanged(nameof(RecruitmentEvents));
+            OnPropertyChanged(nameof(SectOperationEvents));
             OnPropertyChanged(nameof(HasTurnEvents));
             OnPropertyChanged(nameof(HasRecruitmentEvents));
+            OnPropertyChanged(nameof(HasSectOperationEvents));
             OnPropertyChanged(nameof(TownIndustries));
             OnPropertyChanged(nameof(HasIndustryEvents));
             OnPropertyChanged(nameof(TownTaxations));
@@ -145,6 +157,9 @@ namespace CoCity.ViewModels
 
         private void BuildDisplayState()
         {
+            var sectOperationEventsById = _lastSectOperationsReport?.SectEvents
+                .ToDictionary(sectorEvent => sectorEvent.SectId);
+
             Regions = _foundation.Regions
                 .Select(region => new RegionCardViewModel(
                     Name: region.Name,
@@ -176,6 +191,9 @@ namespace CoCity.ViewModels
                     IndustryPreferenceSummary: $"Industry preference: {FormatIndustryPreference(sect.IndustryPreference)}",
                     RecruitmentPolicySummary: $"Recruitment wage: {FormatRecruitmentWage(sect.RecruitmentWage)} ({FormatNumber(SectRecruitmentPolicyCatalog.Get(sect.RecruitmentWage).WagePerRecruit)} taels per recruit)",
                     RecruitmentSummary: $"Last hires: {FormatNumber(sect.LastRecruitsGained)} | Last wages paid: {FormatNumber(sect.LastWagesPaid)} taels | Recruitables remaining: {FormatNumber(sect.RecruitablesFromRegion)}",
+                    OperationsSummary: FormatOperationsSummary(
+                        sect,
+                        sectOperationEventsById?.GetValueOrDefault(sect.SectId)),
                     OutputSummary: $"Current output: {string.Join(" | ", sect.CurrentOutput.Select(FormatOutputMetric))}"))
                 .ToImmutableArray();
 
@@ -223,6 +241,7 @@ namespace CoCity.ViewModels
             {
                 TurnEvents = [];
                 RecruitmentEvents = [];
+                SectOperationEvents = [];
                 return;
             }
 
@@ -242,6 +261,13 @@ namespace CoCity.ViewModels
                     SectName: recruitmentEvent.SectName,
                     RecruitsSummary: $"{FormatRecruitmentWage(recruitmentEvent.RecruitmentWage)} wage recruited {FormatNumber(recruitmentEvent.RecruitsGathered)} mortals from {_regionNamesById.GetValueOrDefault(recruitmentEvent.RegionId, "Unknown region")}, paid {FormatNumber(recruitmentEvent.WagesPaid)} taels, left {FormatNumber(recruitmentEvent.FundsRemaining)} taels. {recruitmentEvent.OutcomeSummary}"))
                 .ToImmutableArray();
+
+            SectOperationEvents = _lastSectOperationsReport?.SectEvents
+                .Select(operationEvent => new SectOperationEventViewModel(
+                    SectName: operationEvent.SectName,
+                    Summary: $"{operationEvent.InputIndustry} inputs {FormatNumber(operationEvent.PurchasedUnits)}/{FormatNumber(operationEvent.RequestedUnits)}, upkeep {FormatNumber(operationEvent.UpkeepPaid)} taels, input cost {FormatNumber(operationEvent.InputPurchaseCost)} taels, output {FormatPercent(operationEvent.OutputFactor)}, funds after ops {FormatNumber(operationEvent.FundsAfter)} taels. {operationEvent.OperationSummary}"))
+                .ToImmutableArray()
+                ?? [];
         }
 
         private void OnPropertyChanged(string propertyName)
@@ -261,6 +287,19 @@ namespace CoCity.ViewModels
 
         private static string FormatRecruitmentWage(RecruitmentWageLevel recruitmentWage)
             => SectRecruitmentPolicyCatalog.Get(recruitmentWage).DisplayName;
+
+        private static string FormatOperationsSummary(
+            SectSimulationState sect,
+            SectOperationEvent? operationEvent)
+        {
+            var profile = SectOperationsCatalog.Get(sect.SectId);
+            return operationEvent is null
+                ? $"Autonomous ops: upkeep {FormatNumber(profile.UpkeepCost)} taels | needs {FormatNumber(profile.RequiredUnitsPerTurn)} {profile.InputIndustry} units"
+                : $"Autonomous ops: upkeep {FormatNumber(operationEvent.UpkeepPaid)} taels | inputs {FormatNumber(operationEvent.PurchasedUnits)}/{FormatNumber(operationEvent.RequestedUnits)} {operationEvent.InputIndustry} | output {FormatPercent(operationEvent.OutputFactor)}";
+        }
+
+        private static string FormatPercent(decimal value)
+            => $"{Math.Round(value * 100m, 0, MidpointRounding.AwayFromZero)}%";
 
         private static string FormatNumber(decimal value)
         {
@@ -301,6 +340,7 @@ namespace CoCity.ViewModels
         string IndustryPreferenceSummary,
         string RecruitmentPolicySummary,
         string RecruitmentSummary,
+        string OperationsSummary,
         string OutputSummary);
 
     public sealed record MinistryCardViewModel(
@@ -329,6 +369,10 @@ namespace CoCity.ViewModels
     public sealed record RecruitmentEventViewModel(
         string SectName,
         string RecruitsSummary);
+
+    public sealed record SectOperationEventViewModel(
+        string SectName,
+        string Summary);
 
     public sealed record TownIndustryCardViewModel(
         string TownName,

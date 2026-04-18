@@ -13,6 +13,12 @@ Implement the scope below as production-ready game behavior rather than temporar
 - Sects must purchase raw materials from the mortal realm.
 - If a sect runs short of funds, its output declines.
 
+## Scope Notes
+- Task 1.3 already introduced a request-driven sect purchase interface, and Task 1.6 established sect runtime funds. This task should wire those foundations into an autonomous sect operations step rather than replacing them with a new purchasing system.
+- It is acceptable to define a narrow seeded operations profile per sect for upkeep cost, required raw material type, and required raw material quantity, as long as these rules stay deterministic and visible in reports or dashboards.
+- Baseline sect output may continue to come from seeded sect definitions, but the runtime sect output shown to the player should now reflect whether upkeep and raw-material requirements were met this turn.
+- Do not implement building construction, expansion logic, ministry-driven optimization, or the broader building content planned for Task 1.8.
+
 ## Code Design
 - Prioritize deterministic turn resolution and highly visible state changes.
 - Keep administrative logic, world simulation, and presentation concerns separated so the prototype can expand without rewrites.

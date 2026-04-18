@@ -164,6 +164,23 @@ namespace CoCity.Foundation
         decimal FundsRemaining,
         string OutcomeSummary);
 
+    public sealed record SectOperationsTurnReport(
+        IReadOnlyList<SectOperationEvent> SectEvents,
+        SectPurchaseReport PurchaseReport);
+
+    public sealed record SectOperationEvent(
+        string SectId,
+        string SectName,
+        MortalIndustryType InputIndustry,
+        int RequestedUnits,
+        int PurchasedUnits,
+        decimal UpkeepPaid,
+        decimal InputPurchaseCost,
+        decimal FundsBefore,
+        decimal FundsAfter,
+        decimal OutputFactor,
+        string OperationSummary);
+
     // ─────────────────────────────────────────────────────────────────────────
     // Industry simulation model
     // ─────────────────────────────────────────────────────────────────────────
