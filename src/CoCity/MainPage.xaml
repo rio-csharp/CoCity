@@ -175,6 +175,30 @@
                 </BindableLayout.ItemTemplate>
             </VerticalStackLayout>
 
+            <!-- Sect Operations -->
+            <Label Text="Sect Operations"
+                   FontAttributes="Bold"
+                   FontSize="20"
+                   IsVisible="{Binding HasSectOperationEvents}" />
+
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding SectOperationEvents}"
+                                 Spacing="8"
+                                 IsVisible="{Binding HasSectOperationEvents}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="viewModels:SectOperationEventViewModel">
+                        <Label>
+                            <Label.FormattedText>
+                                <FormattedString>
+                                    <Span Text="{Binding SectName}" FontAttributes="Bold" />
+                                    <Span Text=": " />
+                                    <Span Text="{Binding Summary}" />
+                                </FormattedString>
+                            </Label.FormattedText>
+                        </Label>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
             <!-- Regions -->
             <Label Text="Regions"
                    FontAttributes="Bold"
@@ -242,14 +266,15 @@
                                   <Label Text="{Binding LocationSummary}" />
                                   <Label Text="{Binding FinanceSummary}" />
                                   <Label Text="{Binding LoyaltySummary}" />
-                                  <Label Text="{Binding IndustryPreferenceSummary}" />
-                                  <Label Text="{Binding RecruitmentPolicySummary}" />
-                                  <Label Text="{Binding RecruitmentSummary}" />
-                                  <Label Text="{Binding OutputSummary}" />
-                              </VerticalStackLayout>
-                          </Border>
-                     </DataTemplate>
-                </BindableLayout.ItemTemplate>
+                                   <Label Text="{Binding IndustryPreferenceSummary}" />
+                                   <Label Text="{Binding RecruitmentPolicySummary}" />
+                                   <Label Text="{Binding RecruitmentSummary}" />
+                                   <Label Text="{Binding OperationsSummary}" />
+                                   <Label Text="{Binding OutputSummary}" />
+                               </VerticalStackLayout>
+                           </Border>
+                      </DataTemplate>
+                 </BindableLayout.ItemTemplate>
             </VerticalStackLayout>
 
             <!-- Ministries -->
