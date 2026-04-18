@@ -12,14 +12,17 @@ namespace CoCity.ViewModels
         private readonly IMortalRealmSimulationService _simulationService;
         private readonly IMortalIndustrySimulationService _industryService;
         private readonly ISectAutonomousOperationsService _sectOperationsService;
+        private readonly IBuildingSystemService _buildingSystemService;
         private readonly IMortalTaxationSimulationService _taxationService;
         private readonly IReadOnlyDictionary<string, string> _regionNamesById;
         private readonly IReadOnlyDictionary<string, MortalTownState> _townsById;
         private MortalRealmState _simulationState;
+        private RealmBuildingState _buildingState;
         private IReadOnlyList<MortalTownIndustryState> _industryStates;
         private RealmTaxationState _taxationState;
         private TurnReport? _lastReport;
         private SectOperationsTurnReport? _lastSectOperationsReport;
+        private BuildingReport? _lastBuildingReport;
         private TaxationTurnReport? _lastTaxationReport;
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -29,27 +32,32 @@ namespace CoCity.ViewModels
             IMortalRealmSimulationService simulationService,
             IMortalIndustrySimulationService industryService,
             ISectAutonomousOperationsService sectOperationsService,
+            IBuildingSystemService buildingSystemService,
             IMortalTaxationSimulationService taxationService)
         {
             _simulationService = simulationService;
             _industryService = industryService;
             _sectOperationsService = sectOperationsService;
+            _buildingSystemService = buildingSystemService;
             _taxationService = taxationService;
             _foundation = foundationService.GetInitialState();
             _regionNamesById = _foundation.Regions.ToDictionary(region => region.Id, region => region.Name);
             _townsById = _foundation.Towns.ToDictionary(town => town.Id);
             _simulationState = _simulationService.Initialize(_foundation);
+            _buildingState = _buildingSystemService.Initialize(_foundation);
             _industryStates = _industryService.Initialize(_foundation, _foundation.Ministries);
             _taxationState = _taxationService.Initialize(_foundation, _simulationState, _industryStates);
 
             AdvanceTurnCommand = new Microsoft.Maui.Controls.Command(ExecuteAdvanceTurn);
+            ConstructSectInfrastructureCommand = new Microsoft.Maui.Controls.Command(ExecuteConstructSectInfrastructure);
+            ConstructMortalInfrastructureCommand = new Microsoft.Maui.Controls.Command(ExecuteConstructMortalInfrastructure);
             IncreaseTaxRateCommand = new Microsoft.Maui.Controls.Command(ExecuteIncreaseTaxRate);
             DecreaseTaxRateCommand = new Microsoft.Maui.Controls.Command(ExecuteDecreaseTaxRate);
             BuildDisplayState();
         }
 
         public string PageTitle => "Prototype Closed Loop Dashboard";
-        public string PageSubtitle => "Task 1.7 adds sect autonomous upkeep, raw-material purchasing, and output decline when funds or inputs run short.";
+        public string PageSubtitle => "Task 1.8 adds foundational sect and mortal buildings with construction cost, upkeep, output bonuses, and visible building activity.";
         public string RealmSummary => $"{_foundation.RealmName} — Turn {SimulationTurnNumber}";
         public int SimulationTurnNumber => _simulationState.TurnNumber;
         public string TaxRateSummary => $"Tax rate: {TaxationPolicyCatalog.Get(_taxationState.SelectedTaxRate).DisplayName}";
@@ -78,15 +86,19 @@ namespace CoCity.ViewModels
         public IReadOnlyList<TownTaxationCardViewModel> TownTaxations { get; private set; } = [];
         public IReadOnlyList<RecruitmentEventViewModel> RecruitmentEvents { get; private set; } = [];
         public IReadOnlyList<SectOperationEventViewModel> SectOperationEvents { get; private set; } = [];
+        public IReadOnlyList<BuildingEventViewModel> BuildingEvents { get; private set; } = [];
         public IReadOnlyList<TurnEventViewModel> TurnEvents { get; private set; } = [];
 
         public bool HasTurnEvents => TurnEvents.Count > 0;
         public bool HasRecruitmentEvents => RecruitmentEvents.Count > 0;
         public bool HasSectOperationEvents => SectOperationEvents.Count > 0;
+        public bool HasBuildingEvents => BuildingEvents.Count > 0;
         public bool HasIndustryEvents => TownIndustries.Count > 0;
         public bool HasTaxationEvents => TownTaxations.Count > 0;
 
         public System.Windows.Input.ICommand AdvanceTurnCommand { get; }
+        public System.Windows.Input.ICommand ConstructSectInfrastructureCommand { get; }
+        public System.Windows.Input.ICommand ConstructMortalInfrastructureCommand { get; }
         public System.Windows.Input.ICommand IncreaseTaxRateCommand { get; }
         public System.Windows.Input.ICommand DecreaseTaxRateCommand { get; }
 
@@ -97,12 +109,20 @@ namespace CoCity.ViewModels
 
             var industryResult = _industryService.Step(_foundation, _foundation.Ministries, realmResult.NextState, _industryStates);
             var sectOperationsResult = _sectOperationsService.Step(_foundation, realmResult.NextState, industryResult.NextStates);
+            var buildingTurnResult = _buildingSystemService.ApplyTurn(
+                _foundation,
+                _buildingState,
+                sectOperationsResult.NextSects,
+                sectOperationsResult.NextIndustryStates,
+                _taxationState.CurrentTreasuryFunds);
 
-            _simulationState = realmResult.NextState with { Sects = sectOperationsResult.NextSects };
-            _industryStates = sectOperationsResult.NextIndustryStates;
+            _simulationState = realmResult.NextState with { Sects = buildingTurnResult.NextSects };
+            _industryStates = buildingTurnResult.NextIndustryStates;
             _lastSectOperationsReport = sectOperationsResult.Report;
+            _lastBuildingReport = buildingTurnResult.Report;
 
-            var taxationResult = _taxationService.Step(_taxationState, _simulationState, _industryStates);
+            var taxationSeedState = _taxationState with { CurrentTreasuryFunds = buildingTurnResult.NextTreasuryFunds };
+            var taxationResult = _taxationService.Step(taxationSeedState, _simulationState, _industryStates);
             _taxationState = taxationResult.NextState;
             _lastTaxationReport = taxationResult.Report;
 
@@ -122,13 +142,54 @@ namespace CoCity.ViewModels
             OnPropertyChanged(nameof(TurnEvents));
             OnPropertyChanged(nameof(RecruitmentEvents));
             OnPropertyChanged(nameof(SectOperationEvents));
+            OnPropertyChanged(nameof(BuildingEvents));
             OnPropertyChanged(nameof(HasTurnEvents));
             OnPropertyChanged(nameof(HasRecruitmentEvents));
             OnPropertyChanged(nameof(HasSectOperationEvents));
+            OnPropertyChanged(nameof(HasBuildingEvents));
             OnPropertyChanged(nameof(TownIndustries));
             OnPropertyChanged(nameof(HasIndustryEvents));
             OnPropertyChanged(nameof(TownTaxations));
             OnPropertyChanged(nameof(HasTaxationEvents));
+        }
+
+        private void ExecuteConstructSectInfrastructure()
+        {
+            var result = _buildingSystemService.ConstructNextSectBuildings(
+                _buildingState,
+                _simulationState.Sects,
+                _taxationState.CurrentTreasuryFunds);
+
+            _buildingState = result.NextState;
+            _simulationState = _simulationState with { Sects = result.NextSects };
+            _taxationState = _taxationState with { CurrentTreasuryFunds = result.NextTreasuryFunds };
+            _lastBuildingReport = result.Report;
+            BuildDisplayState();
+
+            OnPropertyChanged(nameof(TreasurySummary));
+            OnPropertyChanged(nameof(Sects));
+            OnPropertyChanged(nameof(BuildingEvents));
+            OnPropertyChanged(nameof(HasBuildingEvents));
+        }
+
+        private void ExecuteConstructMortalInfrastructure()
+        {
+            var result = _buildingSystemService.ConstructNextTownBuildings(
+                _buildingState,
+                _simulationState.Sects,
+                _simulationState.Towns,
+                _taxationState.CurrentTreasuryFunds);
+
+            _buildingState = result.NextState;
+            _simulationState = _simulationState with { Sects = result.NextSects };
+            _taxationState = _taxationState with { CurrentTreasuryFunds = result.NextTreasuryFunds };
+            _lastBuildingReport = result.Report;
+            BuildDisplayState();
+
+            OnPropertyChanged(nameof(TreasurySummary));
+            OnPropertyChanged(nameof(Towns));
+            OnPropertyChanged(nameof(BuildingEvents));
+            OnPropertyChanged(nameof(HasBuildingEvents));
         }
 
         private void ExecuteIncreaseTaxRate()
@@ -159,6 +220,8 @@ namespace CoCity.ViewModels
         {
             var sectOperationEventsById = _lastSectOperationsReport?.SectEvents
                 .ToDictionary(sectorEvent => sectorEvent.SectId);
+            var sectBuildingsById = _buildingState.Sects.ToDictionary(item => item.SectId);
+            var townBuildingsById = _buildingState.Towns.ToDictionary(item => item.TownId);
 
             Regions = _foundation.Regions
                 .Select(region => new RegionCardViewModel(
@@ -178,6 +241,7 @@ namespace CoCity.ViewModels
                         LocationSummary: $"Region: {_regionNamesById.GetValueOrDefault(town.RegionId, "Unknown region")}",
                         PopulationSummary: $"Population: {FormatNumber(simulation.CurrentPopulation)}",
                         IndustrySummary: $"Industry mix: {string.Join(" | ", town.Industries.Select(FormatIndustryAllocation))}",
+                        BuildingSummary: $"Buildings: {FormatTownBuildings(townBuildingsById.GetValueOrDefault(town.Id))}",
                         OutputSummary: $"Baseline output: {string.Join(" | ", town.Output.Select(FormatOutputMetric))}");
                 })
                 .ToImmutableArray();
@@ -191,6 +255,7 @@ namespace CoCity.ViewModels
                     IndustryPreferenceSummary: $"Industry preference: {FormatIndustryPreference(sect.IndustryPreference)}",
                     RecruitmentPolicySummary: $"Recruitment wage: {FormatRecruitmentWage(sect.RecruitmentWage)} ({FormatNumber(SectRecruitmentPolicyCatalog.Get(sect.RecruitmentWage).WagePerRecruit)} taels per recruit)",
                     RecruitmentSummary: $"Last hires: {FormatNumber(sect.LastRecruitsGained)} | Last wages paid: {FormatNumber(sect.LastWagesPaid)} taels | Recruitables remaining: {FormatNumber(sect.RecruitablesFromRegion)}",
+                    BuildingSummary: $"Buildings: {FormatSectBuildings(sectBuildingsById.GetValueOrDefault(sect.SectId))}",
                     OperationsSummary: FormatOperationsSummary(
                         sect,
                         sectOperationEventsById?.GetValueOrDefault(sect.SectId)),
@@ -242,6 +307,7 @@ namespace CoCity.ViewModels
                 TurnEvents = [];
                 RecruitmentEvents = [];
                 SectOperationEvents = [];
+                BuildingEvents = [];
                 return;
             }
 
@@ -268,6 +334,13 @@ namespace CoCity.ViewModels
                     Summary: $"{operationEvent.InputIndustry} inputs {FormatNumber(operationEvent.PurchasedUnits)}/{FormatNumber(operationEvent.RequestedUnits)}, upkeep {FormatNumber(operationEvent.UpkeepPaid)} taels, input cost {FormatNumber(operationEvent.InputPurchaseCost)} taels, output {FormatPercent(operationEvent.OutputFactor)}, funds after ops {FormatNumber(operationEvent.FundsAfter)} taels. {operationEvent.OperationSummary}"))
                 .ToImmutableArray()
                 ?? [];
+
+            BuildingEvents = _lastBuildingReport is null
+                ? []
+                : _lastBuildingReport.ConstructionEvents
+                    .Select(evt => new BuildingEventViewModel(evt.OwnerName, evt.Summary))
+                    .Concat(_lastBuildingReport.OperationEvents.Select(evt => new BuildingEventViewModel(evt.OwnerName, evt.Summary)))
+                    .ToImmutableArray();
         }
 
         private void OnPropertyChanged(string propertyName)
@@ -301,6 +374,16 @@ namespace CoCity.ViewModels
         private static string FormatPercent(decimal value)
             => $"{Math.Round(value * 100m, 0, MidpointRounding.AwayFromZero)}%";
 
+        private static string FormatSectBuildings(SectBuildingInventoryState? inventory)
+            => inventory is null || inventory.Buildings.Count == 0
+                ? "None"
+                : string.Join(" | ", inventory.Buildings.Select(item => $"{BuildingCatalog.Get(item.Building).DisplayName} x{item.Quantity}"));
+
+        private static string FormatTownBuildings(TownBuildingInventoryState? inventory)
+            => inventory is null || inventory.Buildings.Count == 0
+                ? "None"
+                : string.Join(" | ", inventory.Buildings.Select(item => $"{BuildingCatalog.Get(item.Building).DisplayName} x{item.Quantity}"));
+
         private static string FormatNumber(decimal value)
         {
             if (decimal.Truncate(value) == value)
@@ -330,6 +413,7 @@ namespace CoCity.ViewModels
         string LocationSummary,
         string PopulationSummary,
         string IndustrySummary,
+        string BuildingSummary,
         string OutputSummary);
 
     public sealed record SectCardViewModel(
@@ -340,6 +424,7 @@ namespace CoCity.ViewModels
         string IndustryPreferenceSummary,
         string RecruitmentPolicySummary,
         string RecruitmentSummary,
+        string BuildingSummary,
         string OperationsSummary,
         string OutputSummary);
 
@@ -372,6 +457,10 @@ namespace CoCity.ViewModels
 
     public sealed record SectOperationEventViewModel(
         string SectName,
+        string Summary);
+
+    public sealed record BuildingEventViewModel(
+        string OwnerName,
         string Summary);
 
     public sealed record TownIndustryCardViewModel(

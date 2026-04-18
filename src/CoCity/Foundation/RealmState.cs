@@ -54,6 +54,22 @@ namespace CoCity.Foundation
         Generous
     }
 
+    public enum SectBuildingType
+    {
+        GateHall,
+        DiscipleQuarters,
+        Warehouse,
+        SpiritGatheringArray,
+        AlchemyRoom
+    }
+
+    public enum MortalBuildingType
+    {
+        Farm,
+        Workshop,
+        Market
+    }
+
     /// <summary>Base output per worker for each industry type.</summary>
     public sealed record IndustryBaseOutputRates(
         int AgriculturePerWorker,
@@ -180,6 +196,40 @@ namespace CoCity.Foundation
         decimal FundsAfter,
         decimal OutputFactor,
         string OperationSummary);
+
+    public sealed record RealmBuildingState(
+        IReadOnlyList<SectBuildingInventoryState> Sects,
+        IReadOnlyList<TownBuildingInventoryState> Towns);
+
+    public sealed record SectBuildingInventoryState(
+        string SectId,
+        IReadOnlyList<SectBuildingCount> Buildings);
+
+    public sealed record TownBuildingInventoryState(
+        string TownId,
+        IReadOnlyList<MortalBuildingCount> Buildings);
+
+    public sealed record SectBuildingCount(
+        SectBuildingType Building,
+        int Quantity);
+
+    public sealed record MortalBuildingCount(
+        MortalBuildingType Building,
+        int Quantity);
+
+    public sealed record BuildingReport(
+        IReadOnlyList<BuildingConstructionEvent> ConstructionEvents,
+        IReadOnlyList<BuildingOperationEvent> OperationEvents);
+
+    public sealed record BuildingConstructionEvent(
+        string OwnerName,
+        string BuildingName,
+        decimal ConstructionCost,
+        string Summary);
+
+    public sealed record BuildingOperationEvent(
+        string OwnerName,
+        string Summary);
 
     // ─────────────────────────────────────────────────────────────────────────
     // Industry simulation model

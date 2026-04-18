@@ -11,7 +11,7 @@ namespace CoCity
 
         public App(IServiceProvider serviceProvider)
         {
-            Extensions.LoadFromXaml(this, typeof(App));
+            Microsoft.Maui.Controls.Xaml.Extensions.LoadFromXaml(this, typeof(App));
             _serviceProvider = serviceProvider;
         }
 

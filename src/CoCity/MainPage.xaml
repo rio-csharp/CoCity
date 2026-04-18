@@ -32,6 +32,15 @@
                         HorizontalOptions="Start" />
             </HorizontalStackLayout>
 
+            <HorizontalStackLayout Spacing="12">
+                <Button Text="Construct Next Sect Building"
+                        Command="{Binding ConstructSectInfrastructureCommand}"
+                        HorizontalOptions="Start" />
+                <Button Text="Construct Next Mortal Building"
+                        Command="{Binding ConstructMortalInfrastructureCommand}"
+                        HorizontalOptions="Start" />
+            </HorizontalStackLayout>
+
             <!-- Turn Control -->
             <Button Text="Advance Turn"
                     Command="{Binding AdvanceTurnCommand}"
@@ -199,6 +208,30 @@
                 </BindableLayout.ItemTemplate>
             </VerticalStackLayout>
 
+            <!-- Building Events -->
+            <Label Text="Building Activity"
+                   FontAttributes="Bold"
+                   FontSize="20"
+                   IsVisible="{Binding HasBuildingEvents}" />
+
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding BuildingEvents}"
+                                 Spacing="8"
+                                 IsVisible="{Binding HasBuildingEvents}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="viewModels:BuildingEventViewModel">
+                        <Label>
+                            <Label.FormattedText>
+                                <FormattedString>
+                                    <Span Text="{Binding OwnerName}" FontAttributes="Bold" />
+                                    <Span Text=": " />
+                                    <Span Text="{Binding Summary}" />
+                                </FormattedString>
+                            </Label.FormattedText>
+                        </Label>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
             <!-- Regions -->
             <Label Text="Regions"
                    FontAttributes="Bold"
@@ -241,6 +274,7 @@
                                 <Label Text="{Binding LocationSummary}" />
                                 <Label Text="{Binding PopulationSummary}" />
                                 <Label Text="{Binding IndustrySummary}" />
+                                <Label Text="{Binding BuildingSummary}" />
                                 <Label Text="{Binding OutputSummary}" />
                             </VerticalStackLayout>
                         </Border>
@@ -269,6 +303,7 @@
                                    <Label Text="{Binding IndustryPreferenceSummary}" />
                                    <Label Text="{Binding RecruitmentPolicySummary}" />
                                    <Label Text="{Binding RecruitmentSummary}" />
+                                   <Label Text="{Binding BuildingSummary}" />
                                    <Label Text="{Binding OperationsSummary}" />
                                    <Label Text="{Binding OutputSummary}" />
                                </VerticalStackLayout>
