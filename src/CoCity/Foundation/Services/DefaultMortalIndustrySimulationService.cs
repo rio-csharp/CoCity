@@ -55,6 +55,93 @@ namespace CoCity.Foundation.Services
             return new IndustryTurnResult(nextStates, report);
         }
 
+        public IndustryPurchaseResult ProcessPurchases(
+            IReadOnlyList<MortalTownIndustryState> currentStates,
+            IReadOnlyList<SectState> sects,
+            IReadOnlyList<SectPurchaseRequest> requests)
+        {
+            ArgumentNullException.ThrowIfNull(currentStates);
+            ArgumentNullException.ThrowIfNull(sects);
+            ArgumentNullException.ThrowIfNull(requests);
+
+            var statesByTownId = currentStates.ToDictionary(state => state.TownId);
+            var sectsById = sects.ToDictionary(sect => sect.Id);
+            var remainingFundsBySectId = sects.ToDictionary(sect => sect.Id, sect => sect.Funds);
+            var receipts = ImmutableArray.CreateBuilder<SectPurchaseReceipt>();
+
+            foreach (var request in requests)
+            {
+                if (request.Quantity <= 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(requests), "Purchase quantity must be positive.");
+                }
+
+                if (request.UnitPrice <= 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(requests), "Unit price must be positive.");
+                }
+
+                if (!statesByTownId.TryGetValue(request.TownId, out var townState))
+                {
+                    throw new InvalidOperationException($"Unknown town industry state '{request.TownId}'.");
+                }
+
+                if (!sectsById.TryGetValue(request.SectId, out var sect))
+                {
+                    throw new InvalidOperationException($"Unknown sect '{request.SectId}'.");
+                }
+
+                var availableUnits = GetIndustryUnits(townState.PurchasableSurplus, request.Industry);
+                var affordableUnits = (int)Math.Floor(remainingFundsBySectId[sect.Id] / request.UnitPrice);
+                var purchasedUnits = Math.Min(request.Quantity, Math.Min(availableUnits, affordableUnits));
+                var fundsSpent = purchasedUnits * request.UnitPrice;
+                var fundsRemaining = remainingFundsBySectId[sect.Id] - fundsSpent;
+
+                remainingFundsBySectId[sect.Id] = fundsRemaining;
+                statesByTownId[request.TownId] = townState with
+                {
+                    PurchasableSurplus = UpdateIndustryUnits(
+                        townState.PurchasableSurplus,
+                        request.Industry,
+                        availableUnits - purchasedUnits)
+                };
+
+                receipts.Add(new SectPurchaseReceipt(
+                    SectId: sect.Id,
+                    SectName: sect.Name,
+                    TownId: townState.TownId,
+                    TownName: townState.TownName,
+                    Industry: request.Industry,
+                    RequestedQuantity: request.Quantity,
+                    PurchasedQuantity: purchasedUnits,
+                    UnitPrice: request.UnitPrice,
+                    FundsSpent: fundsSpent,
+                    FundsRemaining: fundsRemaining,
+                    Resolution: BuildResolution(request.Quantity, purchasedUnits, availableUnits, affordableUnits)));
+            }
+
+            var nextStates = currentStates
+                .Select(state => statesByTownId[state.TownId])
+                .ToImmutableArray();
+            var settlements = sects
+                .Select(sect =>
+                {
+                    var fundsRemaining = remainingFundsBySectId[sect.Id];
+                    return new SectPurchaseSettlement(
+                        SectId: sect.Id,
+                        SectName: sect.Name,
+                        StartingFunds: sect.Funds,
+                        FundsSpent: sect.Funds - fundsRemaining,
+                        FundsRemaining: fundsRemaining);
+                })
+                .ToImmutableArray();
+
+            return new IndustryPurchaseResult(
+                NextStates: nextStates,
+                Settlements: settlements,
+                Report: new SectPurchaseReport(receipts.ToImmutable()));
+        }
+
         private static MortalTownIndustryState CalculateTownIndustryState(
             MortalTownState town,
             int currentPopulation,
@@ -134,6 +221,44 @@ namespace CoCity.Foundation.Services
             var administrationRating = revenueMinistry.Minister.Ratings.Administration;
             var efficiency = 1.0m + (administrationRating - BaselineAdministrationRating) / 250m;
             return Math.Clamp(efficiency, MinEfficiency, MaxEfficiency);
+        }
+
+        private static int GetIndustryUnits(IndustryOutput output, MortalIndustryType industry)
+            => industry switch
+            {
+                MortalIndustryType.Agriculture => output.AgricultureUnits,
+                MortalIndustryType.Handicrafts => output.HandicraftsUnits,
+                MortalIndustryType.Commerce => output.CommerceUnits,
+                _ => throw new ArgumentOutOfRangeException(nameof(industry), industry, null)
+            };
+
+        private static IndustryOutput UpdateIndustryUnits(IndustryOutput output, MortalIndustryType industry, int updatedUnits)
+            => industry switch
+            {
+                MortalIndustryType.Agriculture => output with { AgricultureUnits = updatedUnits },
+                MortalIndustryType.Handicrafts => output with { HandicraftsUnits = updatedUnits },
+                MortalIndustryType.Commerce => output with { CommerceUnits = updatedUnits },
+                _ => throw new ArgumentOutOfRangeException(nameof(industry), industry, null)
+            };
+
+        private static string BuildResolution(int requestedUnits, int purchasedUnits, int availableUnits, int affordableUnits)
+        {
+            if (purchasedUnits == requestedUnits)
+            {
+                return "Filled";
+            }
+
+            if (purchasedUnits == 0 && availableUnits == 0)
+            {
+                return "No surplus available";
+            }
+
+            if (purchasedUnits == 0 && affordableUnits == 0)
+            {
+                return "Insufficient funds";
+            }
+
+            return "Partially filled";
         }
     }
 }

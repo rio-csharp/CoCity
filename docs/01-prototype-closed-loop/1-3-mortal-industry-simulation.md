@@ -53,6 +53,7 @@ Each industry type has:
 - The turn report should enumerate output by industry type so the UI can surface these as readable production summaries.
 - Add the industry simulation logic to the existing turn step alongside natural change and recruitment.
 - Seed data should provide realistic base output rates per worker for each industry type in each town.
+- The basic sect purchase flow may be implemented as a domain/service interface plus automated tests; do not add a dedicated player purchase UI in this task.
 
 ## Proposed Code Structure
 - **Domain model layer**: `MortalTownIndustryState`, `IndustryOutput`, `SectPurchaseRequest`, `IndustryTurnReport` records.

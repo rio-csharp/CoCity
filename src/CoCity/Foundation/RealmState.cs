@@ -181,4 +181,38 @@ namespace CoCity.Foundation
     /// <summary>Reports all industry events for a turn.</summary>
     public sealed record IndustryTurnReport(
         IReadOnlyList<TownIndustryEvent> TownIndustryEvents);
+
+    /// <summary>Explicit request for a sect to buy a town's industrial output.</summary>
+    public sealed record SectPurchaseRequest(
+        string SectId,
+        string TownId,
+        MortalIndustryType Industry,
+        int Quantity,
+        decimal UnitPrice);
+
+    /// <summary>Outcome of a single sect purchase request.</summary>
+    public sealed record SectPurchaseReceipt(
+        string SectId,
+        string SectName,
+        string TownId,
+        string TownName,
+        MortalIndustryType Industry,
+        int RequestedQuantity,
+        int PurchasedQuantity,
+        decimal UnitPrice,
+        decimal FundsSpent,
+        decimal FundsRemaining,
+        string Resolution);
+
+    /// <summary>Reports all processed sect purchase requests.</summary>
+    public sealed record SectPurchaseReport(
+        IReadOnlyList<SectPurchaseReceipt> Receipts);
+
+    /// <summary>Aggregated financial result of a purchase batch for one sect.</summary>
+    public sealed record SectPurchaseSettlement(
+        string SectId,
+        string SectName,
+        decimal StartingFunds,
+        decimal FundsSpent,
+        decimal FundsRemaining);
 }

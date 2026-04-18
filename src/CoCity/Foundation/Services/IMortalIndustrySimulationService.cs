@@ -21,9 +21,24 @@ namespace CoCity.Foundation.Services
             IReadOnlyList<MinistryState> ministries,
             MortalRealmState mortalRealmState,
             IReadOnlyList<MortalTownIndustryState> currentStates);
+
+        /// <summary>
+        /// Applies explicit sect purchase requests against currently purchasable industrial surplus.
+        /// This is intentionally request-driven and does not introduce autonomous sect behavior.
+        /// The purchase report exposes financial consequences for the caller to apply to sect state.
+        /// </summary>
+        IndustryPurchaseResult ProcessPurchases(
+            IReadOnlyList<MortalTownIndustryState> currentStates,
+            IReadOnlyList<SectState> sects,
+            IReadOnlyList<SectPurchaseRequest> requests);
     }
 
     public readonly record struct IndustryTurnResult(
         IReadOnlyList<MortalTownIndustryState> NextStates,
         IndustryTurnReport Report);
+
+    public readonly record struct IndustryPurchaseResult(
+        IReadOnlyList<MortalTownIndustryState> NextStates,
+        IReadOnlyList<SectPurchaseSettlement> Settlements,
+        SectPurchaseReport Report);
 }

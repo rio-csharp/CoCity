@@ -1,3 +1,6 @@
 <Solution>
+  <Folder Name="/tests/">
+    <Project Path="tests/CoCity.Foundation.Tests/CoCity.Foundation.Tests.csproj" />
+  </Folder>
   <Project Path="src/CoCity/CoCity.csproj" />
 </Solution>
