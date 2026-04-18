@@ -80,7 +80,7 @@ namespace CoCity.ViewModels
         }
 
         public string PageTitle => "Prototype Closed Loop Dashboard";
-        public string PageSubtitle => "Task 1.13 extracts turn advancement into an explicit pipeline with a unified turn result and report surface.";
+        public string PageSubtitle => "Task 1.14 reorganizes the prototype into a clearer baseline interface for the closed-loop governance flow.";
         public string RealmSummary => $"{_foundation.RealmName} — Turn {SimulationTurnNumber}";
         public int SimulationTurnNumber => _simulationState.TurnNumber;
         public string TurnPipelineSummary => _lastTurnPipelineReport is null
@@ -102,6 +102,26 @@ namespace CoCity.ViewModels
         public string TreasurySummary => SimulationTurnNumber == 0
             ? $"State reserves: {FormatNumber(_taxationState.CurrentTreasuryFunds)} taels"
             : $"State reserves: {FormatNumber(_taxationState.CurrentTreasuryFunds)} taels | Turn {SimulationTurnNumber} complete";
+        public string SectRosterSummary => _simulationState.Sects.Count == 0
+            ? "Sect roster: none."
+            : $"Sect roster ({_simulationState.Sects.Count}): {string.Join(", ", _simulationState.Sects.OrderBy(sect => sect.SectName).Select(sect => sect.SectName))}";
+        public string NationalMortalSummary
+            => $"Mortal status: {_simulationState.Towns.Count} towns | Population {FormatNumber(_simulationState.Towns.Sum(town => town.CurrentPopulation))} | Recruitment pool {FormatNumber(_simulationState.Towns.Sum(town => town.RecruitmentPool))}";
+        public string NationalMinistrySummary
+            => $"Ministry status: {_ministryState.Ministries.Count} ministries | Active cases {_ministryState.Ministries.Sum(ministry => ministry.ActiveCaseCount)} | Pending escalations {_ministryState.Ministries.Sum(ministry => ministry.PendingEscalations.Count)}";
+        public string LastTurnOutcomeSummary
+        {
+            get
+            {
+                if (_lastTurnPipelineReport is null)
+                {
+                    return "Recent outcomes: no turn has resolved yet.";
+                }
+
+                var buildingUpdates = (_lastBuildingReport?.ConstructionEvents.Count ?? 0) + (_lastBuildingReport?.OperationEvents.Count ?? 0);
+                return $"Recent outcomes: {_lastReport?.TownEvents.Count ?? 0} town changes | {_lastReport?.RecruitmentEvents.Count ?? 0} recruitment updates | {_lastSectOperationsReport?.SectEvents.Count ?? 0} sect operations | {buildingUpdates} building updates | {_lastMinistryReport?.MinistryEvents.Count ?? 0} ministry reports.";
+            }
+        }
         public string SelectedMinistrySummary
         {
             get
@@ -198,14 +218,8 @@ namespace CoCity.ViewModels
             BuildDisplayState();
 
             OnPropertyChanged(nameof(PageTitle));
-            OnPropertyChanged(nameof(PageSubtitle));
             OnPropertyChanged(nameof(SimulationTurnNumber));
-            OnPropertyChanged(nameof(RealmSummary));
-            OnPropertyChanged(nameof(TurnPipelineSummary));
-            OnPropertyChanged(nameof(TreasurySummary));
-            OnPropertyChanged(nameof(TaxRateSummary));
-            OnPropertyChanged(nameof(TaxRevenueSummary));
-            OnPropertyChanged(nameof(TaxStabilitySummary));
+            RaiseOverviewProperties();
             OnPropertyChanged(nameof(Towns));
             OnPropertyChanged(nameof(Sects));
             OnPropertyChanged(nameof(TownSimulations));
@@ -242,7 +256,7 @@ namespace CoCity.ViewModels
             _lastBuildingReport = result.Report;
             BuildDisplayState();
 
-            OnPropertyChanged(nameof(TreasurySummary));
+            RaiseOverviewProperties();
             OnPropertyChanged(nameof(Sects));
             OnPropertyChanged(nameof(Ministries));
             OnPropertyChanged(nameof(BuildingEvents));
@@ -266,7 +280,7 @@ namespace CoCity.ViewModels
             _lastBuildingReport = result.Report;
             BuildDisplayState();
 
-            OnPropertyChanged(nameof(TreasurySummary));
+            RaiseOverviewProperties();
             OnPropertyChanged(nameof(Towns));
             OnPropertyChanged(nameof(Ministries));
             OnPropertyChanged(nameof(BuildingEvents));
@@ -292,10 +306,7 @@ namespace CoCity.ViewModels
             RefreshSelections();
             BuildDisplayState();
 
-            OnPropertyChanged(nameof(TreasurySummary));
-            OnPropertyChanged(nameof(TaxRateSummary));
-            OnPropertyChanged(nameof(TaxRevenueSummary));
-            OnPropertyChanged(nameof(TaxStabilitySummary));
+            RaiseOverviewProperties();
             OnPropertyChanged(nameof(TownTaxations));
             OnPropertyChanged(nameof(HasTaxationEvents));
             OnPropertyChanged(nameof(Ministries));
@@ -339,6 +350,7 @@ namespace CoCity.ViewModels
             RefreshSelections();
             BuildDisplayState();
 
+            RaiseOverviewProperties();
             OnPropertyChanged(nameof(Ministries));
             RaisePlayerActionProperties();
         }
@@ -361,6 +373,7 @@ namespace CoCity.ViewModels
             RefreshSelections();
             BuildDisplayState();
 
+            RaiseOverviewProperties();
             OnPropertyChanged(nameof(Ministries));
             RaisePlayerActionProperties();
         }
@@ -419,11 +432,9 @@ namespace CoCity.ViewModels
             RefreshSelections();
             BuildDisplayState();
 
+            RaiseOverviewProperties();
             OnPropertyChanged(nameof(Sects));
             OnPropertyChanged(nameof(Ministries));
-            OnPropertyChanged(nameof(TaxRateSummary));
-            OnPropertyChanged(nameof(TaxRevenueSummary));
-            OnPropertyChanged(nameof(TaxStabilitySummary));
             RaisePlayerActionProperties();
         }
 
@@ -602,6 +613,21 @@ namespace CoCity.ViewModels
             OnPropertyChanged(nameof(PendingRequestSummary));
             OnPropertyChanged(nameof(LastPlayerActionSummary));
             OnPropertyChanged(nameof(HasPendingRequests));
+        }
+
+        private void RaiseOverviewProperties()
+        {
+            OnPropertyChanged(nameof(PageSubtitle));
+            OnPropertyChanged(nameof(RealmSummary));
+            OnPropertyChanged(nameof(TurnPipelineSummary));
+            OnPropertyChanged(nameof(TreasurySummary));
+            OnPropertyChanged(nameof(TaxRateSummary));
+            OnPropertyChanged(nameof(TaxRevenueSummary));
+            OnPropertyChanged(nameof(TaxStabilitySummary));
+            OnPropertyChanged(nameof(SectRosterSummary));
+            OnPropertyChanged(nameof(NationalMortalSummary));
+            OnPropertyChanged(nameof(NationalMinistrySummary));
+            OnPropertyChanged(nameof(LastTurnOutcomeSummary));
         }
 
         private MinistrySimulationState? GetSelectedMinistry()

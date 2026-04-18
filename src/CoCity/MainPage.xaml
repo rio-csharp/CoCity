@@ -7,397 +7,417 @@
 
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="18">
+            <Border Padding="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="18" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="14">
+                    <Label Text="{Binding PageTitle}"
+                           Style="{StaticResource Headline}"
+                           SemanticProperties.HeadingLevel="Level1" />
 
-            <!-- Header -->
-            <Label Text="{Binding PageTitle}"
-                   Style="{StaticResource Headline}"
-                   SemanticProperties.HeadingLevel="Level1" />
+                    <Label Text="{Binding PageSubtitle}"
+                           Style="{StaticResource SubHeadline}"
+                           SemanticProperties.HeadingLevel="Level2" />
 
-            <Label Text="{Binding PageSubtitle}"
-                   Style="{StaticResource SubHeadline}"
-                   SemanticProperties.HeadingLevel="Level2" />
+                    <Label Text="National Overview"
+                           FontAttributes="Bold"
+                           FontSize="22" />
 
-            <Label Text="{Binding RealmSummary}" />
-            <Label Text="{Binding TurnPipelineSummary}" />
-            <Label Text="{Binding TreasurySummary}" />
-            <Label Text="{Binding TaxRateSummary}" />
-            <Label Text="{Binding TaxRevenueSummary}" />
-            <Label Text="{Binding TaxStabilitySummary}" />
+                    <Label Text="{Binding RealmSummary}" />
+                    <Label Text="{Binding TurnPipelineSummary}" />
+                    <Label Text="{Binding TreasurySummary}" />
+                    <Label Text="{Binding TaxRateSummary}" />
+                    <Label Text="{Binding TaxRevenueSummary}" />
+                    <Label Text="{Binding TaxStabilitySummary}" />
+                    <Label Text="{Binding SectRosterSummary}" />
+                    <Label Text="{Binding NationalMortalSummary}" />
+                    <Label Text="{Binding NationalMinistrySummary}" />
+                    <Label Text="{Binding LastTurnOutcomeSummary}" />
 
-            <HorizontalStackLayout Spacing="12">
-                <Button Text="Lower Tax"
-                        Command="{Binding DecreaseTaxRateCommand}"
-                        HorizontalOptions="Start" />
-                <Button Text="Raise Tax"
-                        Command="{Binding IncreaseTaxRateCommand}"
-                        HorizontalOptions="Start" />
-            </HorizontalStackLayout>
+                    <FlexLayout Direction="Row"
+                                Wrap="Wrap"
+                                AlignItems="Start"
+                                JustifyContent="Start">
+                        <Button Text="Advance Turn"
+                                Command="{Binding AdvanceTurnCommand}" />
+                        <Button Text="Lower Tax"
+                                Command="{Binding DecreaseTaxRateCommand}" />
+                        <Button Text="Raise Tax"
+                                Command="{Binding IncreaseTaxRateCommand}" />
+                        <Button Text="Construct Next Sect Building"
+                                Command="{Binding ConstructSectInfrastructureCommand}" />
+                        <Button Text="Construct Next Mortal Building"
+                                Command="{Binding ConstructMortalInfrastructureCommand}" />
+                    </FlexLayout>
 
-            <HorizontalStackLayout Spacing="12">
-                <Button Text="Construct Next Sect Building"
-                        Command="{Binding ConstructSectInfrastructureCommand}"
-                        HorizontalOptions="Start" />
-                <Button Text="Construct Next Mortal Building"
-                        Command="{Binding ConstructMortalInfrastructureCommand}"
-                        HorizontalOptions="Start" />
-            </HorizontalStackLayout>
+                    <Label Text="Ministry Reports"
+                           FontAttributes="Bold"
+                           FontSize="18"
+                           IsVisible="{Binding HasMinistryEvents}" />
 
-            <Label Text="{Binding SelectedMinistrySummary}" />
-            <Label Text="{Binding SelectedMinistryPolicySummary}" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding MinistryEvents}"
+                                         Spacing="8"
+                                         IsVisible="{Binding HasMinistryEvents}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:MinistryEventViewModel">
+                                <Label>
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding MinistryName}" FontAttributes="Bold" />
+                                            <Span Text=": " />
+                                            <Span Text="{Binding Summary}" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
 
-            <HorizontalStackLayout Spacing="12">
-                <Button Text="Next Ministry"
-                        Command="{Binding CycleMinistryFocusCommand}"
-                        HorizontalOptions="Start" />
-                <Button Text="Change Authority"
-                        Command="{Binding ChangeMinistryAuthorityCommand}"
-                        HorizontalOptions="Start" />
-                <Button Text="Change Standard"
-                        Command="{Binding ChangeMinistryStandardCommand}"
-                        HorizontalOptions="Start" />
-            </HorizontalStackLayout>
+                    <Label Text="Regions"
+                           FontAttributes="Bold"
+                           FontSize="18" />
 
-            <Label Text="{Binding PendingRequestSummary}" />
-            <Label Text="{Binding LastPlayerActionSummary}" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Regions}"
+                                         Spacing="12">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:RegionCardViewModel">
+                                <Border Padding="14">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="14" />
+                                    </Border.StrokeShape>
+                                    <VerticalStackLayout Spacing="4">
+                                        <Label Text="{Binding Name}" FontAttributes="Bold" />
+                                        <Label Text="{Binding SpiritualVeinSummary}" />
+                                        <Label Text="{Binding BaselineSummary}" />
+                                        <Label Text="{Binding LocalPowerSummary}" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
 
-            <HorizontalStackLayout Spacing="12">
-                <Button Text="Next Request"
-                        Command="{Binding NextPendingRequestCommand}"
-                        HorizontalOptions="Start" />
-                <Button Text="Approve Request"
-                        Command="{Binding ApprovePendingRequestCommand}"
-                        HorizontalOptions="Start" />
-                <Button Text="Reject Request"
-                        Command="{Binding RejectPendingRequestCommand}"
-                        HorizontalOptions="Start" />
-            </HorizontalStackLayout>
+            <Border Padding="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="18" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Sect Detail Panel"
+                           FontAttributes="Bold"
+                           FontSize="22" />
+                    <Label Text="Funds, population, buildings, output, and sect-side activity stay grouped here so the player can evaluate autonomous power centers quickly."
+                           FontAttributes="Italic" />
 
-            <!-- Turn Control -->
-            <Button Text="Advance Turn"
-                    Command="{Binding AdvanceTurnCommand}"
-                    HorizontalOptions="Start" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Sects}"
+                                         Spacing="12">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:SectCardViewModel">
+                                <Border Padding="14">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="14" />
+                                    </Border.StrokeShape>
+                                    <VerticalStackLayout Spacing="4">
+                                        <Label Text="{Binding Name}" FontAttributes="Bold" />
+                                        <Label Text="{Binding LocationSummary}" />
+                                        <Label Text="{Binding FinanceSummary}" />
+                                        <Label Text="{Binding LoyaltySummary}" />
+                                        <Label Text="{Binding IndustryPreferenceSummary}" />
+                                        <Label Text="{Binding RecruitmentPolicySummary}" />
+                                        <Label Text="{Binding RecruitmentSummary}" />
+                                        <Label Text="{Binding BuildingSummary}" />
+                                        <Label Text="{Binding OperationsSummary}" />
+                                        <Label Text="{Binding OutputSummary}" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
 
-            <!-- Simulation State -->
-            <Label Text="Mortal Realm Simulation"
-                   FontAttributes="Bold"
-                   FontSize="20" />
+                    <Label Text="Sect Recruitment"
+                           FontAttributes="Bold"
+                           FontSize="18"
+                           IsVisible="{Binding HasRecruitmentEvents}" />
 
-            <Label Text="{Binding RealmSummary}"
-                   FontAttributes="Italic" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding RecruitmentEvents}"
+                                         Spacing="8"
+                                         IsVisible="{Binding HasRecruitmentEvents}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:RecruitmentEventViewModel">
+                                <Label>
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding SectName}" FontAttributes="Bold" />
+                                            <Span Text=": " />
+                                            <Span Text="{Binding RecruitsSummary}" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
 
-            <!-- Town Simulation Cards -->
-            <VerticalStackLayout BindableLayout.ItemsSource="{Binding TownSimulations}"
-                                 Spacing="12">
-                <BindableLayout.ItemTemplate>
-                    <DataTemplate x:DataType="viewModels:TownSimulationCardViewModel">
-                        <Border Padding="14">
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="14" />
-                            </Border.StrokeShape>
-                             <VerticalStackLayout Spacing="4">
-                                 <Label Text="{Binding TownName}" FontAttributes="Bold" FontSize="16" />
-                                 <Label Text="{Binding PopulationSummary}" />
-                                 <Label Text="{Binding FoodBalanceSummary}" />
-                                 <Label Text="{Binding RecruitmentPoolSummary}" />
-                                 <Label Text="{Binding RecruitmentImpactSummary}" />
-                                 <Label Text="{Binding ChangeSummary}" FontAttributes="Bold" />
-                             </VerticalStackLayout>
-                         </Border>
-                     </DataTemplate>
-                </BindableLayout.ItemTemplate>
-            </VerticalStackLayout>
+                    <Label Text="Sect Operations"
+                           FontAttributes="Bold"
+                           FontSize="18"
+                           IsVisible="{Binding HasSectOperationEvents}" />
 
-            <!-- Industry State -->
-            <Label Text="Mortal Industry"
-                   FontAttributes="Bold"
-                   FontSize="20"
-                   IsVisible="{Binding HasIndustryEvents}" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding SectOperationEvents}"
+                                         Spacing="8"
+                                         IsVisible="{Binding HasSectOperationEvents}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:SectOperationEventViewModel">
+                                <Label>
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding SectName}" FontAttributes="Bold" />
+                                            <Span Text=": " />
+                                            <Span Text="{Binding Summary}" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
 
-            <VerticalStackLayout BindableLayout.ItemsSource="{Binding TownIndustries}"
-                                 Spacing="12"
-                                 IsVisible="{Binding HasIndustryEvents}">
-                <BindableLayout.ItemTemplate>
-                    <DataTemplate x:DataType="viewModels:TownIndustryCardViewModel">
-                        <Border Padding="14">
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="14" />
-                            </Border.StrokeShape>
-                            <VerticalStackLayout Spacing="4">
-                                <Label Text="{Binding TownName}" FontAttributes="Bold" FontSize="16" />
-                                <Label Text="{Binding LaborForceSummary}" />
-                                <Label Text="{Binding GrossOutputSummary}" />
-                                <Label Text="{Binding GovernmentEfficiencySummary}" />
-                                <Label Text="{Binding NetOutputSummary}" />
-                                <Label Text="{Binding PurchasableSurplusSummary}" FontAttributes="Bold" />
-                            </VerticalStackLayout>
-                        </Border>
-                    </DataTemplate>
-                </BindableLayout.ItemTemplate>
-            </VerticalStackLayout>
+                    <Label Text="Building Activity"
+                           FontAttributes="Bold"
+                           FontSize="18"
+                           IsVisible="{Binding HasBuildingEvents}" />
 
-            <!-- Taxation State -->
-            <Label Text="Mortal Taxation"
-                   FontAttributes="Bold"
-                   FontSize="20"
-                   IsVisible="{Binding HasTaxationEvents}" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding BuildingEvents}"
+                                         Spacing="8"
+                                         IsVisible="{Binding HasBuildingEvents}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:BuildingEventViewModel">
+                                <Label>
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding OwnerName}" FontAttributes="Bold" />
+                                            <Span Text=": " />
+                                            <Span Text="{Binding Summary}" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
 
-            <VerticalStackLayout BindableLayout.ItemsSource="{Binding TownTaxations}"
-                                 Spacing="12"
-                                 IsVisible="{Binding HasTaxationEvents}">
-                <BindableLayout.ItemTemplate>
-                    <DataTemplate x:DataType="viewModels:TownTaxationCardViewModel">
-                        <Border Padding="14">
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="14" />
-                            </Border.StrokeShape>
-                            <VerticalStackLayout Spacing="4">
-                                <Label Text="{Binding TownName}" FontAttributes="Bold" FontSize="16" />
-                                <Label Text="{Binding GrossTaxBaseSummary}" />
-                                <Label Text="{Binding CollectedRevenueSummary}" />
-                                <Label Text="{Binding StabilitySummary}" FontAttributes="Bold" />
-                            </VerticalStackLayout>
-                        </Border>
-                    </DataTemplate>
-                </BindableLayout.ItemTemplate>
-            </VerticalStackLayout>
+            <Border Padding="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="18" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Mortal Realm Panel"
+                           FontAttributes="Bold"
+                           FontSize="22" />
+                    <Label Text="Population, industries, output, and taxation remain together so the player can read the mortal base as one economic surface."
+                           FontAttributes="Italic" />
 
-            <!-- Turn Events -->
-            <Label Text="Turn Events"
-                   FontAttributes="Bold"
-                   FontSize="20"
-                   IsVisible="{Binding HasTurnEvents}" />
+                    <Label Text="Mortal Towns"
+                           FontAttributes="Bold"
+                           FontSize="18" />
 
-            <VerticalStackLayout BindableLayout.ItemsSource="{Binding TurnEvents}"
-                                 Spacing="8"
-                                 IsVisible="{Binding HasTurnEvents}">
-                <BindableLayout.ItemTemplate>
-                    <DataTemplate x:DataType="viewModels:TurnEventViewModel">
-                        <Label>
-                            <Label.FormattedText>
-                                <FormattedString>
-                                    <Span Text="{Binding TownName}" FontAttributes="Bold" />
-                                    <Span Text=": " />
-                                    <Span Text="{Binding PopulationChange}" />
-                                    <Span Text=" | " />
-                                     <Span Text="{Binding ChangeReason}" />
-                                     <Span Text=" | Recruitment: " />
-                                     <Span Text="{Binding RecruitmentLoss}" />
-                                     <Span Text=" | Food: " />
-                                     <Span Text="{Binding FoodBalance}" />
-                                 </FormattedString>
-                             </Label.FormattedText>
-                        </Label>
-                    </DataTemplate>
-                </BindableLayout.ItemTemplate>
-            </VerticalStackLayout>
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Towns}"
+                                         Spacing="12">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:TownCardViewModel">
+                                <Border Padding="14">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="14" />
+                                    </Border.StrokeShape>
+                                    <VerticalStackLayout Spacing="4">
+                                        <Label Text="{Binding Name}" FontAttributes="Bold" />
+                                        <Label Text="{Binding LocationSummary}" />
+                                        <Label Text="{Binding PopulationSummary}" />
+                                        <Label Text="{Binding IndustrySummary}" />
+                                        <Label Text="{Binding BuildingSummary}" />
+                                        <Label Text="{Binding OutputSummary}" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
 
-            <!-- Recruitment Events -->
-            <Label Text="Sect Recruitment"
-                   FontAttributes="Bold"
-                   FontSize="20"
-                   IsVisible="{Binding HasRecruitmentEvents}" />
+                    <Label Text="Mortal Realm Simulation"
+                           FontAttributes="Bold"
+                           FontSize="18" />
 
-            <VerticalStackLayout BindableLayout.ItemsSource="{Binding RecruitmentEvents}"
-                                 Spacing="8"
-                                 IsVisible="{Binding HasRecruitmentEvents}">
-                <BindableLayout.ItemTemplate>
-                    <DataTemplate x:DataType="viewModels:RecruitmentEventViewModel">
-                        <Label>
-                            <Label.FormattedText>
-                                <FormattedString>
-                                    <Span Text="{Binding SectName}" FontAttributes="Bold" />
-                                    <Span Text=": " />
-                                    <Span Text="{Binding RecruitsSummary}" />
-                                </FormattedString>
-                            </Label.FormattedText>
-                        </Label>
-                    </DataTemplate>
-                </BindableLayout.ItemTemplate>
-            </VerticalStackLayout>
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding TownSimulations}"
+                                         Spacing="12">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:TownSimulationCardViewModel">
+                                <Border Padding="14">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="14" />
+                                    </Border.StrokeShape>
+                                    <VerticalStackLayout Spacing="4">
+                                        <Label Text="{Binding TownName}" FontAttributes="Bold" FontSize="16" />
+                                        <Label Text="{Binding PopulationSummary}" />
+                                        <Label Text="{Binding FoodBalanceSummary}" />
+                                        <Label Text="{Binding RecruitmentPoolSummary}" />
+                                        <Label Text="{Binding RecruitmentImpactSummary}" />
+                                        <Label Text="{Binding ChangeSummary}" FontAttributes="Bold" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
 
-            <!-- Sect Operations -->
-            <Label Text="Sect Operations"
-                   FontAttributes="Bold"
-                   FontSize="20"
-                   IsVisible="{Binding HasSectOperationEvents}" />
+                    <Label Text="Mortal Industry"
+                           FontAttributes="Bold"
+                           FontSize="18"
+                           IsVisible="{Binding HasIndustryEvents}" />
 
-            <VerticalStackLayout BindableLayout.ItemsSource="{Binding SectOperationEvents}"
-                                 Spacing="8"
-                                 IsVisible="{Binding HasSectOperationEvents}">
-                <BindableLayout.ItemTemplate>
-                    <DataTemplate x:DataType="viewModels:SectOperationEventViewModel">
-                        <Label>
-                            <Label.FormattedText>
-                                <FormattedString>
-                                    <Span Text="{Binding SectName}" FontAttributes="Bold" />
-                                    <Span Text=": " />
-                                    <Span Text="{Binding Summary}" />
-                                </FormattedString>
-                            </Label.FormattedText>
-                        </Label>
-                    </DataTemplate>
-                </BindableLayout.ItemTemplate>
-            </VerticalStackLayout>
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding TownIndustries}"
+                                         Spacing="12"
+                                         IsVisible="{Binding HasIndustryEvents}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:TownIndustryCardViewModel">
+                                <Border Padding="14">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="14" />
+                                    </Border.StrokeShape>
+                                    <VerticalStackLayout Spacing="4">
+                                        <Label Text="{Binding TownName}" FontAttributes="Bold" FontSize="16" />
+                                        <Label Text="{Binding LaborForceSummary}" />
+                                        <Label Text="{Binding GrossOutputSummary}" />
+                                        <Label Text="{Binding GovernmentEfficiencySummary}" />
+                                        <Label Text="{Binding NetOutputSummary}" />
+                                        <Label Text="{Binding PurchasableSurplusSummary}" FontAttributes="Bold" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
 
-            <!-- Building Events -->
-            <Label Text="Building Activity"
-                   FontAttributes="Bold"
-                   FontSize="20"
-                   IsVisible="{Binding HasBuildingEvents}" />
+                    <Label Text="Mortal Taxation"
+                           FontAttributes="Bold"
+                           FontSize="18"
+                           IsVisible="{Binding HasTaxationEvents}" />
 
-            <VerticalStackLayout BindableLayout.ItemsSource="{Binding BuildingEvents}"
-                                 Spacing="8"
-                                 IsVisible="{Binding HasBuildingEvents}">
-                <BindableLayout.ItemTemplate>
-                    <DataTemplate x:DataType="viewModels:BuildingEventViewModel">
-                        <Label>
-                            <Label.FormattedText>
-                                <FormattedString>
-                                    <Span Text="{Binding OwnerName}" FontAttributes="Bold" />
-                                    <Span Text=": " />
-                                    <Span Text="{Binding Summary}" />
-                                </FormattedString>
-                            </Label.FormattedText>
-                        </Label>
-                    </DataTemplate>
-                </BindableLayout.ItemTemplate>
-            </VerticalStackLayout>
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding TownTaxations}"
+                                         Spacing="12"
+                                         IsVisible="{Binding HasTaxationEvents}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:TownTaxationCardViewModel">
+                                <Border Padding="14">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="14" />
+                                    </Border.StrokeShape>
+                                    <VerticalStackLayout Spacing="4">
+                                        <Label Text="{Binding TownName}" FontAttributes="Bold" FontSize="16" />
+                                        <Label Text="{Binding GrossTaxBaseSummary}" />
+                                        <Label Text="{Binding CollectedRevenueSummary}" />
+                                        <Label Text="{Binding StabilitySummary}" FontAttributes="Bold" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
 
-            <!-- Ministry Reports -->
-            <Label Text="Ministry Reports"
-                   FontAttributes="Bold"
-                   FontSize="20"
-                   IsVisible="{Binding HasMinistryEvents}" />
+                    <Label Text="Turn Events"
+                           FontAttributes="Bold"
+                           FontSize="18"
+                           IsVisible="{Binding HasTurnEvents}" />
 
-            <VerticalStackLayout BindableLayout.ItemsSource="{Binding MinistryEvents}"
-                                 Spacing="8"
-                                 IsVisible="{Binding HasMinistryEvents}">
-                <BindableLayout.ItemTemplate>
-                    <DataTemplate x:DataType="viewModels:MinistryEventViewModel">
-                        <Label>
-                            <Label.FormattedText>
-                                <FormattedString>
-                                    <Span Text="{Binding MinistryName}" FontAttributes="Bold" />
-                                    <Span Text=": " />
-                                    <Span Text="{Binding Summary}" />
-                                </FormattedString>
-                            </Label.FormattedText>
-                        </Label>
-                    </DataTemplate>
-                </BindableLayout.ItemTemplate>
-            </VerticalStackLayout>
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding TurnEvents}"
+                                         Spacing="8"
+                                         IsVisible="{Binding HasTurnEvents}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:TurnEventViewModel">
+                                <Label>
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding TownName}" FontAttributes="Bold" />
+                                            <Span Text=": " />
+                                            <Span Text="{Binding PopulationChange}" />
+                                            <Span Text=" | " />
+                                            <Span Text="{Binding ChangeReason}" />
+                                            <Span Text=" | Recruitment: " />
+                                            <Span Text="{Binding RecruitmentLoss}" />
+                                            <Span Text=" | Food: " />
+                                            <Span Text="{Binding FoodBalance}" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
 
-            <!-- Regions -->
-            <Label Text="Regions"
-                   FontAttributes="Bold"
-                   FontSize="20" />
+            <Border Padding="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="18" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Ministry Panel"
+                           FontAttributes="Bold"
+                           FontSize="22" />
+                    <Label Text="Officials, authority, handling standards, and escalations stay visible here so the player can govern without losing administrative context."
+                           FontAttributes="Italic" />
 
-            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Regions}"
-                                 Spacing="12">
-                <BindableLayout.ItemTemplate>
-                    <DataTemplate x:DataType="viewModels:RegionCardViewModel">
-                        <Border Padding="14">
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="14" />
-                            </Border.StrokeShape>
-                            <VerticalStackLayout Spacing="4">
-                                <Label Text="{Binding Name}" FontAttributes="Bold" />
-                                <Label Text="{Binding SpiritualVeinSummary}" />
-                                <Label Text="{Binding BaselineSummary}" />
-                                <Label Text="{Binding LocalPowerSummary}" />
-                            </VerticalStackLayout>
-                        </Border>
-                    </DataTemplate>
-                </BindableLayout.ItemTemplate>
-            </VerticalStackLayout>
+                    <Label Text="{Binding SelectedMinistrySummary}" />
+                    <Label Text="{Binding SelectedMinistryPolicySummary}" />
 
-            <!-- Mortal Towns -->
-            <Label Text="Mortal Towns"
-                   FontAttributes="Bold"
-                   FontSize="20" />
+                    <FlexLayout Direction="Row"
+                                Wrap="Wrap"
+                                AlignItems="Start"
+                                JustifyContent="Start">
+                        <Button Text="Next Ministry"
+                                Command="{Binding CycleMinistryFocusCommand}" />
+                        <Button Text="Change Authority"
+                                Command="{Binding ChangeMinistryAuthorityCommand}" />
+                        <Button Text="Change Standard"
+                                Command="{Binding ChangeMinistryStandardCommand}" />
+                    </FlexLayout>
 
-            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Towns}"
-                                 Spacing="12">
-                <BindableLayout.ItemTemplate>
-                    <DataTemplate x:DataType="viewModels:TownCardViewModel">
-                        <Border Padding="14">
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="14" />
-                            </Border.StrokeShape>
-                            <VerticalStackLayout Spacing="4">
-                                <Label Text="{Binding Name}" FontAttributes="Bold" />
-                                <Label Text="{Binding LocationSummary}" />
-                                <Label Text="{Binding PopulationSummary}" />
-                                <Label Text="{Binding IndustrySummary}" />
-                                <Label Text="{Binding BuildingSummary}" />
-                                <Label Text="{Binding OutputSummary}" />
-                            </VerticalStackLayout>
-                        </Border>
-                    </DataTemplate>
-                </BindableLayout.ItemTemplate>
-            </VerticalStackLayout>
+                    <Label Text="{Binding PendingRequestSummary}" />
+                    <Label Text="{Binding LastPlayerActionSummary}" />
 
-            <!-- Sects -->
-            <Label Text="Sects"
-                   FontAttributes="Bold"
-                   FontSize="20" />
+                    <FlexLayout Direction="Row"
+                                Wrap="Wrap"
+                                AlignItems="Start"
+                                JustifyContent="Start">
+                        <Button Text="Next Request"
+                                Command="{Binding NextPendingRequestCommand}" />
+                        <Button Text="Approve Request"
+                                Command="{Binding ApprovePendingRequestCommand}" />
+                        <Button Text="Reject Request"
+                                Command="{Binding RejectPendingRequestCommand}" />
+                    </FlexLayout>
 
-            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Sects}"
-                                 Spacing="12">
-                <BindableLayout.ItemTemplate>
-                    <DataTemplate x:DataType="viewModels:SectCardViewModel">
-                        <Border Padding="14">
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="14" />
-                            </Border.StrokeShape>
-                              <VerticalStackLayout Spacing="4">
-                                  <Label Text="{Binding Name}" FontAttributes="Bold" />
-                                  <Label Text="{Binding LocationSummary}" />
-                                  <Label Text="{Binding FinanceSummary}" />
-                                  <Label Text="{Binding LoyaltySummary}" />
-                                   <Label Text="{Binding IndustryPreferenceSummary}" />
-                                   <Label Text="{Binding RecruitmentPolicySummary}" />
-                                   <Label Text="{Binding RecruitmentSummary}" />
-                                   <Label Text="{Binding BuildingSummary}" />
-                                   <Label Text="{Binding OperationsSummary}" />
-                                   <Label Text="{Binding OutputSummary}" />
-                               </VerticalStackLayout>
-                           </Border>
-                      </DataTemplate>
-                 </BindableLayout.ItemTemplate>
-            </VerticalStackLayout>
-
-            <!-- Ministries -->
-            <Label Text="Ministries"
-                   FontAttributes="Bold"
-                   FontSize="20" />
-
-            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Ministries}"
-                                 Spacing="12">
-                <BindableLayout.ItemTemplate>
-                    <DataTemplate x:DataType="viewModels:MinistryCardViewModel">
-                        <Border Padding="14">
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="14" />
-                            </Border.StrokeShape>
-                            <VerticalStackLayout Spacing="4">
-                                <Label Text="{Binding Name}" FontAttributes="Bold" />
-                                <Label Text="{Binding AuthoritySummary}" />
-                                <Label Text="{Binding ResponsibilitySummary}" />
-                                <Label Text="{Binding StandardSummary}" />
-                                <Label Text="{Binding MinisterSummary}" />
-                                <Label Text="{Binding TeamSummary}" />
-                                <Label Text="{Binding CapacitySummary}" />
-                                <Label Text="{Binding AutomationSummary}" />
-                                <Label Text="{Binding CaseSummary}" />
-                                <Label Text="{Binding EscalationSummary}" />
-                                <Label Text="{Binding ReportSummary}" FontAttributes="Bold" />
-                            </VerticalStackLayout>
-                        </Border>
-                    </DataTemplate>
-                </BindableLayout.ItemTemplate>
-            </VerticalStackLayout>
-
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Ministries}"
+                                         Spacing="12">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:MinistryCardViewModel">
+                                <Border Padding="14">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="14" />
+                                    </Border.StrokeShape>
+                                    <VerticalStackLayout Spacing="4">
+                                        <Label Text="{Binding Name}" FontAttributes="Bold" />
+                                        <Label Text="{Binding AuthoritySummary}" />
+                                        <Label Text="{Binding ResponsibilitySummary}" />
+                                        <Label Text="{Binding StandardSummary}" />
+                                        <Label Text="{Binding MinisterSummary}" />
+                                        <Label Text="{Binding TeamSummary}" />
+                                        <Label Text="{Binding CapacitySummary}" />
+                                        <Label Text="{Binding AutomationSummary}" />
+                                        <Label Text="{Binding CaseSummary}" />
+                                        <Label Text="{Binding EscalationSummary}" />
+                                        <Label Text="{Binding ReportSummary}" FontAttributes="Bold" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
         </VerticalStackLayout>
     </ScrollView>
 
