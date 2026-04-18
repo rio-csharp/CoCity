@@ -141,9 +141,12 @@ namespace CoCity.Foundation
         OfficialState Minister,
         IReadOnlyList<OfficialState> SupportingOfficials,
         decimal HandlingCapacity,
+        decimal AutomationSuccessRate,
         int ActiveCaseCount,
+        int ProcessedCaseCount,
         int EscalatedCaseCount,
         IReadOnlyList<MinistryCaseState> ActiveCases,
+        IReadOnlyList<MinistryEscalationState> PendingEscalations,
         string LastSummary);
 
     public sealed record MinistryCaseState(
@@ -161,6 +164,13 @@ namespace CoCity.Foundation
         SectDiplomacy
     }
 
+    public sealed record MinistryEscalationState(
+        string CaseId,
+        MinistryCaseType CaseType,
+        string SubjectId,
+        string SubjectName,
+        string Reason);
+
     public sealed record MinistryTurnReport(
         int TurnNumber,
         IReadOnlyList<MinistryTurnEvent> MinistryEvents);
@@ -169,7 +179,9 @@ namespace CoCity.Foundation
         string MinistryId,
         string MinistryName,
         decimal HandlingCapacity,
+        decimal AutomationSuccessRate,
         int ActiveCases,
+        int ProcessedCases,
         int EscalatedCases,
         string Summary);
 

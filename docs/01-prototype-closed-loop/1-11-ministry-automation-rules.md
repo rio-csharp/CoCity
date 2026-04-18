@@ -13,6 +13,12 @@ Implement the scope below as production-ready game behavior rather than temporar
 - Department processing has a success rate.
 - Failed cases or cases beyond ministry authority are escalated to the player.
 
+## Scope Notes
+- Build directly on the runtime ministry case framework from Task 1.10 rather than replacing it with a separate approval system.
+- It is acceptable in this task to use the current ministry authority and handling-standard profiles as the baseline automation policy, even though player editing of those settings is delivered in Task 1.12.
+- Keep automation deterministic and inspectable: every processed case, failed automation, and escalation should be visible in ministry summaries or reports.
+- Do not implement manual approve/reject buttons or a broad player action layer in this task; only surface what was escalated for later player review.
+
 ## Code Design
 - Prioritize deterministic turn resolution and highly visible state changes.
 - Keep administrative logic, world simulation, and presentation concerns separated so the prototype can expand without rewrites.

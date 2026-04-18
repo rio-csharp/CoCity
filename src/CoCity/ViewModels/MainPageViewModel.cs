@@ -63,7 +63,7 @@ namespace CoCity.ViewModels
         }
 
         public string PageTitle => "Prototype Closed Loop Dashboard";
-        public string PageSubtitle => "Task 1.10 adds a runtime ministry framework with cases, staffing capacity, and visible ministry reports.";
+        public string PageSubtitle => "Task 1.11 adds deterministic ministry automation, success rates, and escalations for later player review.";
         public string RealmSummary => $"{_foundation.RealmName} — Turn {SimulationTurnNumber}";
         public int SimulationTurnNumber => _simulationState.TurnNumber;
         public string TaxRateSummary => $"Tax rate: {TaxationPolicyCatalog.Get(_taxationState.SelectedTaxRate).DisplayName}";
@@ -291,10 +291,14 @@ namespace CoCity.ViewModels
                     StandardSummary: $"Standard: {ministry.Standard.Name}. {ministry.Standard.Summary}",
                     MinisterSummary: $"Minister: {FormatOfficial(ministry.Minister)}",
                     TeamSummary: $"Supporting officials: {string.Join("; ", ministry.SupportingOfficials.Select(FormatOfficial))}",
-                    CapacitySummary: $"Handling capacity: {ministry.HandlingCapacity} | Active cases: {ministry.ActiveCaseCount} | Escalated: {ministry.EscalatedCaseCount}",
+                    CapacitySummary: $"Handling capacity: {FormatNumber(ministry.HandlingCapacity)} | Automation success: {FormatPercent(ministry.AutomationSuccessRate)} | Active cases: {ministry.ActiveCaseCount}",
+                    AutomationSummary: $"Processed this turn: {ministry.ProcessedCaseCount} | Escalated: {ministry.EscalatedCaseCount}",
                     CaseSummary: ministry.ActiveCases.Count == 0
                         ? "Current docket: none."
                         : $"Current docket: {string.Join("; ", ministry.ActiveCases.Select(item => item.Summary))}",
+                    EscalationSummary: ministry.PendingEscalations.Count == 0
+                        ? "Pending escalations: none."
+                        : $"Pending escalations: {string.Join("; ", ministry.PendingEscalations.Select(item => item.Reason))}",
                     ReportSummary: $"Latest report: {ministry.LastSummary}"))
                 .ToImmutableArray();
 
@@ -372,7 +376,7 @@ namespace CoCity.ViewModels
             MinistryEvents = _lastMinistryReport?.MinistryEvents
                 .Select(evt => new MinistryEventViewModel(
                     MinistryName: evt.MinistryName,
-                    Summary: $"{evt.Summary}"))
+                    Summary: $"{evt.ProcessedCases} processed | {evt.EscalatedCases} escalated | {FormatPercent(evt.AutomationSuccessRate)} success. {evt.Summary}"))
                 .ToImmutableArray()
                 ?? [];
         }
@@ -478,7 +482,9 @@ namespace CoCity.ViewModels
         string MinisterSummary,
         string TeamSummary,
         string CapacitySummary,
+        string AutomationSummary,
         string CaseSummary,
+        string EscalationSummary,
         string ReportSummary);
 
     public sealed record TownSimulationCardViewModel(

@@ -357,7 +357,9 @@
                                 <Label Text="{Binding MinisterSummary}" />
                                 <Label Text="{Binding TeamSummary}" />
                                 <Label Text="{Binding CapacitySummary}" />
+                                <Label Text="{Binding AutomationSummary}" />
                                 <Label Text="{Binding CaseSummary}" />
+                                <Label Text="{Binding EscalationSummary}" />
                                 <Label Text="{Binding ReportSummary}" FontAttributes="Bold" />
                             </VerticalStackLayout>
                         </Border>
