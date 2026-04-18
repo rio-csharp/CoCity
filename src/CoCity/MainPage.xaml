@@ -237,14 +237,16 @@
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="14" />
                             </Border.StrokeShape>
-                             <VerticalStackLayout Spacing="4">
-                                 <Label Text="{Binding Name}" FontAttributes="Bold" />
-                                 <Label Text="{Binding LocationSummary}" />
-                                 <Label Text="{Binding FinanceSummary}" />
-                                 <Label Text="{Binding RecruitmentSummary}" />
-                                 <Label Text="{Binding OutputSummary}" />
-                             </VerticalStackLayout>
-                         </Border>
+                              <VerticalStackLayout Spacing="4">
+                                  <Label Text="{Binding Name}" FontAttributes="Bold" />
+                                  <Label Text="{Binding LocationSummary}" />
+                                  <Label Text="{Binding FinanceSummary}" />
+                                  <Label Text="{Binding LoyaltySummary}" />
+                                  <Label Text="{Binding IndustryPreferenceSummary}" />
+                                  <Label Text="{Binding RecruitmentSummary}" />
+                                  <Label Text="{Binding OutputSummary}" />
+                              </VerticalStackLayout>
+                          </Border>
                      </DataTemplate>
                 </BindableLayout.ItemTemplate>
             </VerticalStackLayout>

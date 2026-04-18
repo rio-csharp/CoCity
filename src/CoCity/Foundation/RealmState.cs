@@ -59,6 +59,8 @@ namespace CoCity.Foundation
         string Name,
         decimal Funds,
         int Population,
+        int Loyalty,
+        MortalIndustryType? IndustryPreference,
         IReadOnlyList<OutputMetric> Output);
 
     public sealed record OutputMetric(
@@ -101,13 +103,18 @@ namespace CoCity.Foundation
     /// <summary>Immutable snapshot of all mortal-realm simulation state for a single turn.</summary>
     public sealed record MortalRealmState(
         IReadOnlyList<MortalTownSimulationState> Towns,
-        IReadOnlyList<SectRecruitmentSimulationState> Sects,
+        IReadOnlyList<SectSimulationState> Sects,
         int TurnNumber);
 
-    public sealed record SectRecruitmentSimulationState(
+    public sealed record SectSimulationState(
         string SectId,
         string SectName,
         string RegionId,
+        decimal CurrentFunds,
+        int CurrentPopulation,
+        int Loyalty,
+        MortalIndustryType? IndustryPreference,
+        IReadOnlyList<OutputMetric> CurrentOutput,
         int RecruitablesFromRegion);
 
     /// <summary>Per-town simulation state.</summary>

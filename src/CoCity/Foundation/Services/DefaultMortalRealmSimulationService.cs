@@ -20,7 +20,7 @@ namespace CoCity.Foundation.Services
 
             return new MortalRealmState(
                 Towns: townStates,
-                Sects: BuildSectStates(foundation.Sects, regionTownIdsByRegion, townStates),
+                Sects: CreateInitialSectStates(foundation.Sects, regionTownIdsByRegion, townStates),
                 TurnNumber: 0);
         }
 
@@ -31,6 +31,10 @@ namespace CoCity.Foundation.Services
             var townDefinitions = foundation.Towns.ToDictionary(town => town.Id);
             var regionTownIdsByRegion = foundation.Regions.ToDictionary(region => region.Id, region => region.TownIds);
             var currentTowns = currentState.Towns.ToDictionary(town => town.TownId);
+            var currentSects = currentState.Sects
+                .OrderBy(sect => sect.RegionId)
+                .ThenBy(sect => sect.SectId)
+                .ToImmutableArray();
 
             var naturalResults = foundation.Towns
                 .Select(town => ResolveNaturalChange(town, currentTowns[town.Id], taxPolicy))
@@ -39,7 +43,8 @@ namespace CoCity.Foundation.Services
 
             var remainingRecruitmentPools = naturalResults.ToDictionary(result => result.TownId, result => result.RecruitmentPoolBeforeRecruitment);
             var recruitsLostByTown = naturalResults.ToDictionary(result => result.TownId, _ => 0);
-            var recruitmentEvents = ResolveSectRecruitment(foundation.Sects, regionTownIdsByRegion, remainingRecruitmentPools, recruitsLostByTown);
+            var recruitmentEvents = ResolveSectRecruitment(currentSects, regionTownIdsByRegion, remainingRecruitmentPools, recruitsLostByTown);
+            var recruitsBySectId = recruitmentEvents.ToDictionary(item => item.SectId, item => item.RecruitsGathered);
 
             var nextTownStates = naturalResults
                 .Select(result =>
@@ -84,7 +89,7 @@ namespace CoCity.Foundation.Services
 
             var nextState = new MortalRealmState(
                 Towns: nextTownStates,
-                Sects: BuildSectStates(foundation.Sects, regionTownIdsByRegion, nextTownStates),
+                Sects: BuildNextSectStates(currentSects, regionTownIdsByRegion, nextTownStates, recruitsBySectId),
                 TurnNumber: nextTurn);
 
             return new TurnResult(NextState: nextState, Report: report);
@@ -106,14 +111,14 @@ namespace CoCity.Foundation.Services
         }
 
         private static ImmutableArray<SectRecruitmentEvent> ResolveSectRecruitment(
-            IReadOnlyList<SectState> sects,
+            IReadOnlyList<SectSimulationState> sects,
             IReadOnlyDictionary<string, IReadOnlyList<string>> regionTownIdsByRegion,
             Dictionary<string, int> remainingRecruitmentPools,
             Dictionary<string, int> recruitsLostByTown)
         {
             var recruitmentEvents = new List<SectRecruitmentEvent>();
 
-            foreach (var sect in sects.OrderBy(sect => sect.RegionId).ThenBy(sect => sect.Id))
+            foreach (var sect in sects)
             {
                 var townIdsInRegion = regionTownIdsByRegion[sect.RegionId];
 
@@ -145,8 +150,8 @@ namespace CoCity.Foundation.Services
                 }
 
                 recruitmentEvents.Add(new SectRecruitmentEvent(
-                    SectId: sect.Id,
-                    SectName: sect.Name,
+                    SectId: sect.SectId,
+                    SectName: sect.SectName,
                     RegionId: sect.RegionId,
                     RecruitsGathered: recruitsGathered));
             }
@@ -154,10 +159,40 @@ namespace CoCity.Foundation.Services
             return recruitmentEvents.ToImmutableArray();
         }
 
-        private static ImmutableArray<SectRecruitmentSimulationState> BuildSectStates(
+        private static ImmutableArray<SectSimulationState> CreateInitialSectStates(
             IReadOnlyList<SectState> sects,
             IReadOnlyDictionary<string, IReadOnlyList<string>> regionTownIdsByRegion,
             IReadOnlyList<MortalTownSimulationState> towns)
+        {
+            var remainingPoolsByTown = towns.ToDictionary(town => town.TownId, town => town.RecruitmentPool);
+
+            return sects
+                .OrderBy(sect => sect.RegionId)
+                .ThenBy(sect => sect.Id)
+                .Select(sect =>
+                {
+                    var recruitablesFromRegion = regionTownIdsByRegion[sect.RegionId]
+                        .Sum(townId => remainingPoolsByTown[townId]);
+
+                    return new SectSimulationState(
+                        SectId: sect.Id,
+                        SectName: sect.Name,
+                        RegionId: sect.RegionId,
+                        CurrentFunds: sect.Funds,
+                        CurrentPopulation: sect.Population,
+                        Loyalty: sect.Loyalty,
+                        IndustryPreference: sect.IndustryPreference,
+                        CurrentOutput: sect.Output.ToImmutableArray(),
+                        RecruitablesFromRegion: recruitablesFromRegion);
+                })
+                .ToImmutableArray();
+        }
+
+        private static ImmutableArray<SectSimulationState> BuildNextSectStates(
+            IReadOnlyList<SectSimulationState> sects,
+            IReadOnlyDictionary<string, IReadOnlyList<string>> regionTownIdsByRegion,
+            IReadOnlyList<MortalTownSimulationState> towns,
+            IReadOnlyDictionary<string, int> recruitsBySectId)
         {
             var remainingPoolsByTown = towns.ToDictionary(town => town.TownId, town => town.RecruitmentPool);
 
@@ -167,11 +202,11 @@ namespace CoCity.Foundation.Services
                     var recruitablesFromRegion = regionTownIdsByRegion[sect.RegionId]
                         .Sum(townId => remainingPoolsByTown[townId]);
 
-                    return new SectRecruitmentSimulationState(
-                        SectId: sect.Id,
-                        SectName: sect.Name,
-                        RegionId: sect.RegionId,
-                        RecruitablesFromRegion: recruitablesFromRegion);
+                    return sect with
+                    {
+                        CurrentPopulation = sect.CurrentPopulation + recruitsBySectId.GetValueOrDefault(sect.SectId),
+                        RecruitablesFromRegion = recruitablesFromRegion
+                    };
                 })
                 .ToImmutableArray();
         }
