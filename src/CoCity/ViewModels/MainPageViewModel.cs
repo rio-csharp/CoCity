@@ -44,8 +44,8 @@ namespace CoCity.ViewModels
             BuildDisplayState();
         }
 
-        public string PageTitle => "Mortal Realm Taxation";
-        public string PageSubtitle => "Task 1.4 adds tax collection, adjustable tax rates, treasury growth, and a baseline mortal stability effect.";
+        public string PageTitle => "Prototype Closed Loop Dashboard";
+        public string PageSubtitle => "Task 1.5 promotes sects into runtime state with visible funds, population, loyalty, region ties, and baseline industry preference tracking.";
         public string RealmSummary => $"{_foundation.RealmName} — Turn {SimulationTurnNumber}";
         public int SimulationTurnNumber => _simulationState.TurnNumber;
         public string TaxRateSummary => $"Tax rate: {TaxationPolicyCatalog.Get(_taxationState.SelectedTaxRate).DisplayName}";
@@ -145,8 +145,6 @@ namespace CoCity.ViewModels
 
         private void BuildDisplayState()
         {
-            var sectRecruitablesById = _simulationState.Sects.ToDictionary(sect => sect.SectId, sect => sect.RecruitablesFromRegion);
-
             Regions = _foundation.Regions
                 .Select(region => new RegionCardViewModel(
                     Name: region.Name,
@@ -169,13 +167,15 @@ namespace CoCity.ViewModels
                 })
                 .ToImmutableArray();
 
-            Sects = _foundation.Sects
+            Sects = _simulationState.Sects
                 .Select(sect => new SectCardViewModel(
-                    Name: sect.Name,
+                    Name: sect.SectName,
                     LocationSummary: $"Region: {_regionNamesById.GetValueOrDefault(sect.RegionId, "Unknown region")}",
-                    FinanceSummary: $"Funds: {FormatNumber(sect.Funds)} taels | Population: {FormatNumber(sect.Population)}",
-                    RecruitmentSummary: $"Recruitables remaining in region: {FormatNumber(sectRecruitablesById.GetValueOrDefault(sect.Id))}",
-                    OutputSummary: $"Baseline output: {string.Join(" | ", sect.Output.Select(FormatOutputMetric))}"))
+                    FinanceSummary: $"Funds: {FormatNumber(sect.CurrentFunds)} taels | Population: {FormatNumber(sect.CurrentPopulation)}",
+                    LoyaltySummary: $"Loyalty: {FormatNumber(sect.Loyalty)}",
+                    IndustryPreferenceSummary: $"Industry preference: {FormatIndustryPreference(sect.IndustryPreference)}",
+                    RecruitmentSummary: $"Recruitables remaining in region: {FormatNumber(sect.RecruitablesFromRegion)}",
+                    OutputSummary: $"Current output: {string.Join(" | ", sect.CurrentOutput.Select(FormatOutputMetric))}"))
                 .ToImmutableArray();
 
             Ministries = _foundation.Ministries
@@ -255,6 +255,9 @@ namespace CoCity.ViewModels
         private static string FormatOutputMetric(OutputMetric output)
             => $"{output.Label} {FormatNumber(output.Amount)} {output.Unit}";
 
+        private static string FormatIndustryPreference(MortalIndustryType? industryPreference)
+            => industryPreference?.ToString() ?? "None yet";
+
         private static string FormatNumber(decimal value)
         {
             if (decimal.Truncate(value) == value)
@@ -290,6 +293,8 @@ namespace CoCity.ViewModels
         string Name,
         string LocationSummary,
         string FinanceSummary,
+        string LoyaltySummary,
+        string IndustryPreferenceSummary,
         string RecruitmentSummary,
         string OutputSummary);
 

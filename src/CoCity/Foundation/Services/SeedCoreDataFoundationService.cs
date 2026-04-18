@@ -124,6 +124,8 @@ namespace CoCity.Foundation.Services
                     Name: "Azure Talisman Academy",
                     Funds: 5200,
                     Population: 164,
+                    Loyalty: 78,
+                    IndustryPreference: null,
                     Output: ImmutableArray.Create(
                         new OutputMetric("Warding talismans", 58, "seals"),
                         new OutputMetric("Ritual commissions", 18, "contracts"))),
@@ -133,6 +135,8 @@ namespace CoCity.Foundation.Services
                     Name: "Iron Peak Hall",
                     Funds: 4380,
                     Population: 141,
+                    Loyalty: 71,
+                    IndustryPreference: null,
                     Output: ImmutableArray.Create(
                         new OutputMetric("Refined ore", 92, "crates"),
                         new OutputMetric("Forged implements", 37, "sets"))),
@@ -142,6 +146,8 @@ namespace CoCity.Foundation.Services
                     Name: "Verdant Crucible Sect",
                     Funds: 6130,
                     Population: 188,
+                    Loyalty: 83,
+                    IndustryPreference: null,
                     Output: ImmutableArray.Create(
                         new OutputMetric("Spirit herbs", 144, "bundles"),
                         new OutputMetric("Alchemy batches", 32, "lots"))));

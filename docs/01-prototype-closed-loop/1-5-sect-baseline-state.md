@@ -13,6 +13,12 @@ Implement the scope below as production-ready game behavior rather than temporar
 - Each sect has a loyalty value.
 - Each sect has an industry preference field, initially empty.
 
+## Scope Notes
+- The seeded sect records can remain the source of initial values, but the running turn loop should expose a dedicated sect runtime state that is authoritative for current funds, population, output, loyalty, and industry preference.
+- It is acceptable for the new industry preference field to be empty or `null` for every sect in this task as long as the state exists and is visible to the player.
+- Preserve the existing simple sect recruitment effect from earlier prototype work, but do not introduce the wage-based recruitment rules from Task 1.6 here.
+- Do not implement sect autonomous purchasing, sect upkeep, or sect production logic from Task 1.7 in this task.
+
 ## Code Design
 - Prioritize deterministic turn resolution and highly visible state changes.
 - Keep administrative logic, world simulation, and presentation concerns separated so the prototype can expand without rewrites.
