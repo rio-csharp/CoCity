@@ -24,6 +24,7 @@ namespace CoCity
             builder.Services.AddSingleton<IMortalRealmSimulationService, DefaultMortalRealmSimulationService>();
             builder.Services.AddSingleton<IMortalIndustrySimulationService, DefaultMortalIndustrySimulationService>();
             builder.Services.AddSingleton<ISectAutonomousOperationsService, DefaultSectAutonomousOperationsService>();
+            builder.Services.AddSingleton<IBuildingSystemService, DefaultBuildingSystemService>();
             builder.Services.AddSingleton<IMortalTaxationSimulationService, DefaultMortalTaxationSimulationService>();
             builder.Services.AddTransient<MainPageViewModel>();
             builder.Services.AddTransient<MainPage>();

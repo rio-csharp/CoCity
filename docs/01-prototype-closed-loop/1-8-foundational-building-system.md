@@ -14,6 +14,12 @@ Implement the scope below as production-ready game behavior rather than temporar
 - Sects can construct sect buildings.
 - The mortal administration can construct mortal buildings.
 
+## Scope Notes
+- It is acceptable for this task to provide a narrow construction entry point that triggers foundational building construction without introducing the full player action framework planned for Task 1.12.
+- Task 1.9 owns automatic sect construction, priority logic, quantity caps, and build time. Task 1.8 should stop at foundational definitions, runtime inventories, construction transactions, and turn-by-turn building effects.
+- Building output may be applied as deterministic bonuses to existing sect or mortal production systems as long as those effects are visible in reports or panels.
+- Construction and upkeep costs should have real financial consequences for sect funds or the treasury in this task.
+
 ## Code Design
 - Prioritize deterministic turn resolution and highly visible state changes.
 - Keep administrative logic, world simulation, and presentation concerns separated so the prototype can expand without rewrites.

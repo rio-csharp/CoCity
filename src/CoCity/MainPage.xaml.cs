@@ -8,7 +8,7 @@ namespace CoCity
     {
         public MainPage(MainPageViewModel viewModel)
         {
-            Extensions.LoadFromXaml(this, typeof(MainPage));
+            Microsoft.Maui.Controls.Xaml.Extensions.LoadFromXaml(this, typeof(MainPage));
             BindingContext = viewModel;
         }
     }
