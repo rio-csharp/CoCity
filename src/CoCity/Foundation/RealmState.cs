@@ -130,6 +130,49 @@ namespace CoCity.Foundation
         IReadOnlyList<SectSimulationState> Sects,
         int TurnNumber);
 
+    public sealed record RealmMinistryState(
+        IReadOnlyList<MinistrySimulationState> Ministries);
+
+    public sealed record MinistrySimulationState(
+        string MinistryId,
+        string MinistryName,
+        MinistryAuthorityProfile Authority,
+        HandlingStandardProfile Standard,
+        OfficialState Minister,
+        IReadOnlyList<OfficialState> SupportingOfficials,
+        decimal HandlingCapacity,
+        int ActiveCaseCount,
+        int EscalatedCaseCount,
+        IReadOnlyList<MinistryCaseState> ActiveCases,
+        string LastSummary);
+
+    public sealed record MinistryCaseState(
+        string CaseId,
+        MinistryCaseType CaseType,
+        string SubjectId,
+        string SubjectName,
+        bool RequiresEscalation,
+        string Summary);
+
+    public enum MinistryCaseType
+    {
+        SectApplication,
+        TaxCollection,
+        SectDiplomacy
+    }
+
+    public sealed record MinistryTurnReport(
+        int TurnNumber,
+        IReadOnlyList<MinistryTurnEvent> MinistryEvents);
+
+    public sealed record MinistryTurnEvent(
+        string MinistryId,
+        string MinistryName,
+        decimal HandlingCapacity,
+        int ActiveCases,
+        int EscalatedCases,
+        string Summary);
+
     public sealed record SectSimulationState(
         string SectId,
         string SectName,

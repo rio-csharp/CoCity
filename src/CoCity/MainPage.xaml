@@ -232,6 +232,30 @@
                 </BindableLayout.ItemTemplate>
             </VerticalStackLayout>
 
+            <!-- Ministry Reports -->
+            <Label Text="Ministry Reports"
+                   FontAttributes="Bold"
+                   FontSize="20"
+                   IsVisible="{Binding HasMinistryEvents}" />
+
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding MinistryEvents}"
+                                 Spacing="8"
+                                 IsVisible="{Binding HasMinistryEvents}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="viewModels:MinistryEventViewModel">
+                        <Label>
+                            <Label.FormattedText>
+                                <FormattedString>
+                                    <Span Text="{Binding MinistryName}" FontAttributes="Bold" />
+                                    <Span Text=": " />
+                                    <Span Text="{Binding Summary}" />
+                                </FormattedString>
+                            </Label.FormattedText>
+                        </Label>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
             <!-- Regions -->
             <Label Text="Regions"
                    FontAttributes="Bold"
@@ -332,6 +356,9 @@
                                 <Label Text="{Binding StandardSummary}" />
                                 <Label Text="{Binding MinisterSummary}" />
                                 <Label Text="{Binding TeamSummary}" />
+                                <Label Text="{Binding CapacitySummary}" />
+                                <Label Text="{Binding CaseSummary}" />
+                                <Label Text="{Binding ReportSummary}" FontAttributes="Bold" />
                             </VerticalStackLayout>
                         </Border>
                     </DataTemplate>

@@ -14,6 +14,12 @@ Implement the scope below as production-ready game behavior rather than temporar
 - Each ministry has a minister and subordinate officials.
 - Officials have ability stats such as administration, integrity, and loyalty.
 
+## Scope Notes
+- Establish an authoritative runtime ministry layer instead of keeping ministries as static seed-only metadata.
+- It is acceptable for ministries in this task to focus on visible workload, case tracking, and report generation rather than full automated approval logic.
+- Preserve room for 1.11 ministry automation and 1.12 player-directed authority or standards changes without implementing those future behaviors early.
+- Keep sect applications, revenue handling, and simplified rites diplomacy deterministic and inspectable through ministry reports or dashboard state.
+
 ## Code Design
 - Prioritize deterministic turn resolution and highly visible state changes.
 - Keep administrative logic, world simulation, and presentation concerns separated so the prototype can expand without rewrites.
