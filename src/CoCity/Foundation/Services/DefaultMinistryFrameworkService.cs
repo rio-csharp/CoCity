@@ -29,6 +29,8 @@ namespace CoCity.Foundation.Services
                         ProcessedCaseCount: 0,
                         EscalatedCaseCount: 0,
                         ActiveCases: [],
+                        ApprovedCases: [],
+                        RejectedCases: [],
                         PendingEscalations: [],
                         LastSummary: "No ministry activity recorded yet."))
                     .ToImmutableArray());
@@ -99,13 +101,23 @@ namespace CoCity.Foundation.Services
             RealmTaxationState taxationState,
             bool processAutomation)
         {
-            var activeCases = ministry.MinistryId switch
+            var rawCases = ministry.MinistryId switch
             {
                 "ministry.personnel" => BuildPersonnelCases(mortalRealmState.Sects, buildingInventoriesBySectId),
                 "ministry.revenue" => BuildRevenueCases(taxationState),
                 "ministry.rites" => BuildRitesCases(mortalRealmState.Sects, buildingInventoriesBySectId),
                 _ => []
             };
+            var retainedApprovals = ministry.ApprovedCases
+                .Where(approved => rawCases.Any(activeCase => activeCase.CaseId == approved.CaseId))
+                .ToImmutableArray();
+            var retainedRejections = ministry.RejectedCases
+                .Where(rejected => rawCases.Any(activeCase => activeCase.CaseId == rejected.CaseId))
+                .ToImmutableArray();
+            var activeCases = rawCases
+                .Where(activeCase => retainedApprovals.All(approved => approved.CaseId != activeCase.CaseId))
+                .Where(activeCase => retainedRejections.All(rejected => rejected.CaseId != activeCase.CaseId))
+                .ToImmutableArray();
 
             var handlingCapacity = CalculateHandlingCapacity(ministry.Minister, ministry.SupportingOfficials);
             var automationSuccessRate = CalculateAutomationSuccessRate(
@@ -128,6 +140,8 @@ namespace CoCity.Foundation.Services
                     ProcessedCaseCount = 0,
                     EscalatedCaseCount = previewEscalations.Length,
                     ActiveCases = activeCases,
+                    ApprovedCases = retainedApprovals,
+                    RejectedCases = retainedRejections,
                     PendingEscalations = previewEscalations,
                     LastSummary = BuildPreviewSummary(ministry.MinistryName, activeCases.Length, previewEscalations.Length, automationSuccessRate)
                 };
@@ -155,6 +169,8 @@ namespace CoCity.Foundation.Services
                 ProcessedCaseCount = processedCount,
                 EscalatedCaseCount = escalations.Count,
                 ActiveCases = activeCases,
+                ApprovedCases = retainedApprovals,
+                RejectedCases = retainedRejections,
                 PendingEscalations = escalations.ToImmutable(),
                 LastSummary = BuildAutomationSummary(
                     ministry.MinistryName,
@@ -185,7 +201,7 @@ namespace CoCity.Foundation.Services
                     || sect.CurrentPopulation >= 200;
 
                 cases.Add(new MinistryCaseState(
-                    CaseId: $"{sect.SectId}:expansion",
+                    CaseId: $"{sect.SectId}:expansion:{inventory.ActiveProject.Building}",
                     CaseType: MinistryCaseType.SectApplication,
                     SubjectId: sect.SectId,
                     SubjectName: sect.SectName,
@@ -268,15 +284,8 @@ namespace CoCity.Foundation.Services
                 ? 0.35m
                 : Math.Max(0m, (activeCaseCount - handlingCapacity) / (handlingCapacity * 3m));
 
-            var delegationModifier = ministry.Authority.DelegationLevel switch
-            {
-                "Broad delegation" => 0.05m,
-                "Narrow delegation" => -0.05m,
-                _ => 0m
-            };
-
             return Math.Clamp(
-                Math.Round(baseRate + delegationModifier - workloadPenalty, 2, MidpointRounding.AwayFromZero),
+                Math.Round(baseRate + MinistryPolicyCatalog.GetDelegationModifier(ministry.Authority) - workloadPenalty, 2, MidpointRounding.AwayFromZero),
                 0.45m,
                 0.97m);
         }
@@ -311,14 +320,7 @@ namespace CoCity.Foundation.Services
                 _ => 0.70m
             };
 
-            var standardModifier = ministry.Standard.Name switch
-            {
-                "Conservative review" => 0.05m,
-                "Precautionary mediation" => 0.08m,
-                _ => 0m
-            };
-
-            return baseThreshold + standardModifier;
+            return baseThreshold + MinistryPolicyCatalog.GetStandardThresholdModifier(ministry.Standard);
         }
 
         private static MinistryEscalationState BuildEscalation(

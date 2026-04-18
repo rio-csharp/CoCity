@@ -15,6 +15,7 @@ namespace CoCity.ViewModels
         private readonly IBuildingSystemService _buildingSystemService;
         private readonly IMortalTaxationSimulationService _taxationService;
         private readonly IMinistryFrameworkService _ministryFrameworkService;
+        private readonly IPlayerActionService _playerActionService;
         private readonly IReadOnlyDictionary<string, string> _regionNamesById;
         private readonly IReadOnlyDictionary<string, MortalTownState> _townsById;
         private MortalRealmState _simulationState;
@@ -27,6 +28,9 @@ namespace CoCity.ViewModels
         private BuildingReport? _lastBuildingReport;
         private TaxationTurnReport? _lastTaxationReport;
         private MinistryTurnReport? _lastMinistryReport;
+        private string? _selectedMinistryId;
+        private int _selectedRequestIndex;
+        private string _lastPlayerActionSummary = "No player action taken yet.";
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -37,7 +41,8 @@ namespace CoCity.ViewModels
             ISectAutonomousOperationsService sectOperationsService,
             IBuildingSystemService buildingSystemService,
             IMortalTaxationSimulationService taxationService,
-            IMinistryFrameworkService ministryFrameworkService)
+            IMinistryFrameworkService ministryFrameworkService,
+            IPlayerActionService playerActionService)
         {
             _simulationService = simulationService;
             _industryService = industryService;
@@ -45,6 +50,7 @@ namespace CoCity.ViewModels
             _buildingSystemService = buildingSystemService;
             _taxationService = taxationService;
             _ministryFrameworkService = ministryFrameworkService;
+            _playerActionService = playerActionService;
             _foundation = foundationService.GetInitialState();
             _regionNamesById = _foundation.Regions.ToDictionary(region => region.Id, region => region.Name);
             _townsById = _foundation.Towns.ToDictionary(town => town.Id);
@@ -53,17 +59,24 @@ namespace CoCity.ViewModels
             _industryStates = _industryService.Initialize(_foundation, _foundation.Ministries);
             _taxationState = _taxationService.Initialize(_foundation, _simulationState, _industryStates);
             _ministryState = _ministryFrameworkService.Initialize(_foundation, _simulationState, _buildingState, _taxationState);
+            _selectedMinistryId = _ministryState.Ministries.FirstOrDefault()?.MinistryId;
 
             AdvanceTurnCommand = new Microsoft.Maui.Controls.Command(ExecuteAdvanceTurn);
             ConstructSectInfrastructureCommand = new Microsoft.Maui.Controls.Command(ExecuteConstructSectInfrastructure);
             ConstructMortalInfrastructureCommand = new Microsoft.Maui.Controls.Command(ExecuteConstructMortalInfrastructure);
             IncreaseTaxRateCommand = new Microsoft.Maui.Controls.Command(ExecuteIncreaseTaxRate);
             DecreaseTaxRateCommand = new Microsoft.Maui.Controls.Command(ExecuteDecreaseTaxRate);
+            CycleMinistryFocusCommand = new Microsoft.Maui.Controls.Command(ExecuteCycleMinistryFocus);
+            ChangeMinistryAuthorityCommand = new Microsoft.Maui.Controls.Command(ExecuteChangeMinistryAuthority);
+            ChangeMinistryStandardCommand = new Microsoft.Maui.Controls.Command(ExecuteChangeMinistryStandard);
+            NextPendingRequestCommand = new Microsoft.Maui.Controls.Command(ExecuteNextPendingRequest);
+            ApprovePendingRequestCommand = new Microsoft.Maui.Controls.Command(ExecuteApprovePendingRequest);
+            RejectPendingRequestCommand = new Microsoft.Maui.Controls.Command(ExecuteRejectPendingRequest);
             BuildDisplayState();
         }
 
         public string PageTitle => "Prototype Closed Loop Dashboard";
-        public string PageSubtitle => "Task 1.11 adds deterministic ministry automation, success rates, and escalations for later player review.";
+        public string PageSubtitle => "Task 1.12 adds player-facing ministry policy controls and manual approval or rejection of escalated requests.";
         public string RealmSummary => $"{_foundation.RealmName} — Turn {SimulationTurnNumber}";
         public int SimulationTurnNumber => _simulationState.TurnNumber;
         public string TaxRateSummary => $"Tax rate: {TaxationPolicyCatalog.Get(_taxationState.SelectedTaxRate).DisplayName}";
@@ -82,6 +95,40 @@ namespace CoCity.ViewModels
         public string TreasurySummary => SimulationTurnNumber == 0
             ? $"State reserves: {FormatNumber(_taxationState.CurrentTreasuryFunds)} taels"
             : $"State reserves: {FormatNumber(_taxationState.CurrentTreasuryFunds)} taels | Turn {SimulationTurnNumber} complete";
+        public string SelectedMinistrySummary
+        {
+            get
+            {
+                var ministry = GetSelectedMinistry();
+                return ministry is null
+                    ? "Policy focus: none."
+                    : $"Policy focus: {ministry.MinistryName}";
+            }
+        }
+
+        public string SelectedMinistryPolicySummary
+        {
+            get
+            {
+                var ministry = GetSelectedMinistry();
+                return ministry is null
+                    ? "Authority and handling standard: unavailable."
+                    : $"Authority: {ministry.Authority.DelegationLevel} | Standard: {ministry.Standard.Name}";
+            }
+        }
+
+        public string PendingRequestSummary
+        {
+            get
+            {
+                var request = GetCurrentPendingRequest();
+                return request is null
+                    ? "Pending request: none."
+                    : $"Pending request: {request.Value.Escalation.SubjectName} via {request.Value.MinistryName} - {request.Value.Escalation.Reason}";
+            }
+        }
+
+        public string LastPlayerActionSummary => _lastPlayerActionSummary;
 
         public IReadOnlyList<RegionCardViewModel> Regions { get; private set; } = [];
         public IReadOnlyList<TownCardViewModel> Towns { get; private set; } = [];
@@ -103,12 +150,19 @@ namespace CoCity.ViewModels
         public bool HasIndustryEvents => TownIndustries.Count > 0;
         public bool HasTaxationEvents => TownTaxations.Count > 0;
         public bool HasMinistryEvents => MinistryEvents.Count > 0;
+        public bool HasPendingRequests => GetPendingRequests().Length > 0;
 
         public System.Windows.Input.ICommand AdvanceTurnCommand { get; }
         public System.Windows.Input.ICommand ConstructSectInfrastructureCommand { get; }
         public System.Windows.Input.ICommand ConstructMortalInfrastructureCommand { get; }
         public System.Windows.Input.ICommand IncreaseTaxRateCommand { get; }
         public System.Windows.Input.ICommand DecreaseTaxRateCommand { get; }
+        public System.Windows.Input.ICommand CycleMinistryFocusCommand { get; }
+        public System.Windows.Input.ICommand ChangeMinistryAuthorityCommand { get; }
+        public System.Windows.Input.ICommand ChangeMinistryStandardCommand { get; }
+        public System.Windows.Input.ICommand NextPendingRequestCommand { get; }
+        public System.Windows.Input.ICommand ApprovePendingRequestCommand { get; }
+        public System.Windows.Input.ICommand RejectPendingRequestCommand { get; }
 
         private void ExecuteAdvanceTurn()
         {
@@ -137,6 +191,7 @@ namespace CoCity.ViewModels
             var ministryResult = _ministryFrameworkService.Step(_foundation, _ministryState, _simulationState, _buildingState, _taxationState);
             _ministryState = ministryResult.NextState;
             _lastMinistryReport = ministryResult.Report;
+            RefreshSelections();
 
             BuildDisplayState();
 
@@ -166,6 +221,7 @@ namespace CoCity.ViewModels
             OnPropertyChanged(nameof(Ministries));
             OnPropertyChanged(nameof(MinistryEvents));
             OnPropertyChanged(nameof(HasMinistryEvents));
+            RaisePlayerActionProperties();
         }
 
         private void ExecuteConstructSectInfrastructure()
@@ -179,6 +235,7 @@ namespace CoCity.ViewModels
             _simulationState = _simulationState with { Sects = result.NextSects };
             _taxationState = _taxationState with { CurrentTreasuryFunds = result.NextTreasuryFunds };
             _ministryState = _ministryFrameworkService.Recalculate(_foundation, _ministryState, _simulationState, _buildingState, _taxationState);
+            RefreshSelections();
             _lastBuildingReport = result.Report;
             BuildDisplayState();
 
@@ -187,6 +244,7 @@ namespace CoCity.ViewModels
             OnPropertyChanged(nameof(Ministries));
             OnPropertyChanged(nameof(BuildingEvents));
             OnPropertyChanged(nameof(HasBuildingEvents));
+            RaisePlayerActionProperties();
         }
 
         private void ExecuteConstructMortalInfrastructure()
@@ -201,6 +259,7 @@ namespace CoCity.ViewModels
             _simulationState = _simulationState with { Sects = result.NextSects };
             _taxationState = _taxationState with { CurrentTreasuryFunds = result.NextTreasuryFunds };
             _ministryState = _ministryFrameworkService.Recalculate(_foundation, _ministryState, _simulationState, _buildingState, _taxationState);
+            RefreshSelections();
             _lastBuildingReport = result.Report;
             BuildDisplayState();
 
@@ -209,6 +268,7 @@ namespace CoCity.ViewModels
             OnPropertyChanged(nameof(Ministries));
             OnPropertyChanged(nameof(BuildingEvents));
             OnPropertyChanged(nameof(HasBuildingEvents));
+            RaisePlayerActionProperties();
         }
 
         private void ExecuteIncreaseTaxRate()
@@ -226,6 +286,7 @@ namespace CoCity.ViewModels
 
             _taxationState = _taxationService.SetTaxRate(_taxationState, _simulationState, _industryStates, taxRate);
             _ministryState = _ministryFrameworkService.Recalculate(_foundation, _ministryState, _simulationState, _buildingState, _taxationState);
+            RefreshSelections();
             BuildDisplayState();
 
             OnPropertyChanged(nameof(TreasurySummary));
@@ -235,6 +296,132 @@ namespace CoCity.ViewModels
             OnPropertyChanged(nameof(TownTaxations));
             OnPropertyChanged(nameof(HasTaxationEvents));
             OnPropertyChanged(nameof(Ministries));
+            RaisePlayerActionProperties();
+        }
+
+        private void ExecuteCycleMinistryFocus()
+        {
+            if (_ministryState.Ministries.Count == 0)
+            {
+                return;
+            }
+
+            var orderedMinistryIds = _ministryState.Ministries
+                .OrderBy(ministry => ministry.MinistryId)
+                .Select(ministry => ministry.MinistryId)
+                .ToImmutableArray();
+            var currentIndex = _selectedMinistryId is null
+                ? -1
+                : orderedMinistryIds.IndexOf(_selectedMinistryId);
+
+            _selectedMinistryId = orderedMinistryIds[(currentIndex + 1 + orderedMinistryIds.Length) % orderedMinistryIds.Length];
+            RaisePlayerActionProperties();
+        }
+
+        private void ExecuteChangeMinistryAuthority()
+        {
+            if (GetSelectedMinistry() is not { } ministry)
+            {
+                return;
+            }
+
+            _ministryState = _playerActionService.CycleMinistryAuthority(
+                _foundation,
+                _ministryState,
+                _simulationState,
+                _buildingState,
+                _taxationState,
+                ministry.MinistryId);
+            _lastPlayerActionSummary = $"Updated {ministry.MinistryName} authority to {_ministryState.Ministries.Single(item => item.MinistryId == ministry.MinistryId).Authority.DelegationLevel}.";
+            RefreshSelections();
+            BuildDisplayState();
+
+            OnPropertyChanged(nameof(Ministries));
+            RaisePlayerActionProperties();
+        }
+
+        private void ExecuteChangeMinistryStandard()
+        {
+            if (GetSelectedMinistry() is not { } ministry)
+            {
+                return;
+            }
+
+            _ministryState = _playerActionService.CycleMinistryStandard(
+                _foundation,
+                _ministryState,
+                _simulationState,
+                _buildingState,
+                _taxationState,
+                ministry.MinistryId);
+            _lastPlayerActionSummary = $"Updated {ministry.MinistryName} handling standard to {_ministryState.Ministries.Single(item => item.MinistryId == ministry.MinistryId).Standard.Name}.";
+            RefreshSelections();
+            BuildDisplayState();
+
+            OnPropertyChanged(nameof(Ministries));
+            RaisePlayerActionProperties();
+        }
+
+        private void ExecuteNextPendingRequest()
+        {
+            var requests = GetPendingRequests();
+            if (requests.Length == 0)
+            {
+                return;
+            }
+
+            _selectedRequestIndex = (_selectedRequestIndex + 1) % requests.Length;
+            RaisePlayerActionProperties();
+        }
+
+        private void ExecuteApprovePendingRequest()
+            => ResolvePendingRequest(approved: true);
+
+        private void ExecuteRejectPendingRequest()
+            => ResolvePendingRequest(approved: false);
+
+        private void ResolvePendingRequest(bool approved)
+        {
+            var request = GetCurrentPendingRequest();
+            if (request is null)
+            {
+                return;
+            }
+
+            var result = approved
+                ? _playerActionService.ApproveEscalation(
+                    _foundation,
+                    _ministryState,
+                    _simulationState,
+                    _buildingState,
+                    _taxationState,
+                    _industryStates,
+                    request.Value.MinistryId,
+                    request.Value.Escalation.CaseId)
+                : _playerActionService.RejectEscalation(
+                    _foundation,
+                    _ministryState,
+                    _simulationState,
+                    _buildingState,
+                    _taxationState,
+                    _industryStates,
+                    request.Value.MinistryId,
+                    request.Value.Escalation.CaseId);
+
+            _ministryState = result.NextMinistryState;
+            _simulationState = result.NextRealmState;
+            _buildingState = result.NextBuildingState;
+            _taxationState = result.NextTaxationState;
+            _lastPlayerActionSummary = result.Summary;
+            RefreshSelections();
+            BuildDisplayState();
+
+            OnPropertyChanged(nameof(Sects));
+            OnPropertyChanged(nameof(Ministries));
+            OnPropertyChanged(nameof(TaxRateSummary));
+            OnPropertyChanged(nameof(TaxRevenueSummary));
+            OnPropertyChanged(nameof(TaxStabilitySummary));
+            RaisePlayerActionProperties();
         }
 
         private void BuildDisplayState()
@@ -296,9 +483,7 @@ namespace CoCity.ViewModels
                     CaseSummary: ministry.ActiveCases.Count == 0
                         ? "Current docket: none."
                         : $"Current docket: {string.Join("; ", ministry.ActiveCases.Select(item => item.Summary))}",
-                    EscalationSummary: ministry.PendingEscalations.Count == 0
-                        ? "Pending escalations: none."
-                        : $"Pending escalations: {string.Join("; ", ministry.PendingEscalations.Select(item => item.Reason))}",
+                    EscalationSummary: $"Approved requests: {ministry.ApprovedCases.Count} | Rejected requests: {ministry.RejectedCases.Count} | Pending escalations: {ministry.PendingEscalations.Count}",
                     ReportSummary: $"Latest report: {ministry.LastSummary}"))
                 .ToImmutableArray();
 
@@ -383,6 +568,59 @@ namespace CoCity.ViewModels
 
         private void OnPropertyChanged(string propertyName)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        private void RefreshSelections()
+        {
+            if (_ministryState.Ministries.Count == 0)
+            {
+                _selectedMinistryId = null;
+                _selectedRequestIndex = 0;
+                return;
+            }
+
+            if (_selectedMinistryId is null || _ministryState.Ministries.All(ministry => ministry.MinistryId != _selectedMinistryId))
+            {
+                _selectedMinistryId = _ministryState.Ministries
+                    .OrderBy(ministry => ministry.MinistryId)
+                    .Select(ministry => ministry.MinistryId)
+                    .FirstOrDefault();
+            }
+
+            var pendingRequests = GetPendingRequests();
+            _selectedRequestIndex = pendingRequests.Length == 0
+                ? 0
+                : Math.Clamp(_selectedRequestIndex, 0, pendingRequests.Length - 1);
+        }
+
+        private void RaisePlayerActionProperties()
+        {
+            OnPropertyChanged(nameof(SelectedMinistrySummary));
+            OnPropertyChanged(nameof(SelectedMinistryPolicySummary));
+            OnPropertyChanged(nameof(PendingRequestSummary));
+            OnPropertyChanged(nameof(LastPlayerActionSummary));
+            OnPropertyChanged(nameof(HasPendingRequests));
+        }
+
+        private MinistrySimulationState? GetSelectedMinistry()
+            => _selectedMinistryId is null
+                ? null
+                : _ministryState.Ministries.SingleOrDefault(ministry => ministry.MinistryId == _selectedMinistryId);
+
+        private (string MinistryId, string MinistryName, MinistryEscalationState Escalation)? GetCurrentPendingRequest()
+        {
+            var pendingRequests = GetPendingRequests();
+            return pendingRequests.Length == 0
+                ? null
+                : pendingRequests[_selectedRequestIndex];
+        }
+
+        private ImmutableArray<(string MinistryId, string MinistryName, MinistryEscalationState Escalation)> GetPendingRequests()
+            => _ministryState.Ministries
+                .OrderBy(ministry => ministry.MinistryId)
+                .SelectMany(ministry => ministry.PendingEscalations
+                    .OrderBy(escalation => escalation.CaseId)
+                    .Select(escalation => (ministry.MinistryId, ministry.MinistryName, escalation)))
+                .ToImmutableArray();
 
         private static string FormatIndustryAllocation(IndustryAllocation allocation)
             => $"{allocation.Industry} {allocation.WorkforceShare}%";

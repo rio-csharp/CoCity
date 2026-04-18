@@ -15,7 +15,7 @@ Use this file to track implementation status for every planned increment. Update
 | 1.9 | Prototype Closed Loop | Sect Auto-Construction Logic | Done | Copilot | Extended the 1.8 building system with deterministic sect auto-construction priorities, quantity caps, build-time project tracking, visible project progress/completion reporting, and regression coverage while keeping ministry workflows and broader action routing out of scope. |
 | 1.10 | Prototype Closed Loop | Ministry Framework | Done | Copilot | Added authoritative runtime ministry state, ministry case tracking for personnel/revenue/rites, visible ministry workload and report panels, and regression coverage while leaving 1.11 automation and 1.12 player actions for later tasks. |
 | 1.11 | Prototype Closed Loop | Ministry Automation Rules | Done | Copilot | Added deterministic ministry automation success rates, automatic handling for routine personnel and revenue cases, visible escalation queues for failed or over-authority cases, and regression coverage while leaving direct player actions to Task 1.12. |
-| 1.12 | Prototype Closed Loop | Player Core Actions | Not Started | - | - |
+| 1.12 | Prototype Closed Loop | Player Core Actions | Done | Copilot | Added player-facing ministry focus controls, authority and handling-standard cycling, visible pending request review, and manual approval or rejection flows with regression coverage while keeping the explicit turn pipeline refactor for Task 1.13. |
 | 1.13 | Prototype Closed Loop | Turn Advancement Pipeline | Not Started | - | - |
 | 1.14 | Prototype Closed Loop | Baseline User Interface | Not Started | - | - |
 | 1.15 | Prototype Closed Loop | Baseline Events and Alerts | Not Started | - | - |
