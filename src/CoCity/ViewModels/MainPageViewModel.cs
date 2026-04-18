@@ -14,16 +14,19 @@ namespace CoCity.ViewModels
         private readonly ISectAutonomousOperationsService _sectOperationsService;
         private readonly IBuildingSystemService _buildingSystemService;
         private readonly IMortalTaxationSimulationService _taxationService;
+        private readonly IMinistryFrameworkService _ministryFrameworkService;
         private readonly IReadOnlyDictionary<string, string> _regionNamesById;
         private readonly IReadOnlyDictionary<string, MortalTownState> _townsById;
         private MortalRealmState _simulationState;
         private RealmBuildingState _buildingState;
         private IReadOnlyList<MortalTownIndustryState> _industryStates;
         private RealmTaxationState _taxationState;
+        private RealmMinistryState _ministryState;
         private TurnReport? _lastReport;
         private SectOperationsTurnReport? _lastSectOperationsReport;
         private BuildingReport? _lastBuildingReport;
         private TaxationTurnReport? _lastTaxationReport;
+        private MinistryTurnReport? _lastMinistryReport;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -33,13 +36,15 @@ namespace CoCity.ViewModels
             IMortalIndustrySimulationService industryService,
             ISectAutonomousOperationsService sectOperationsService,
             IBuildingSystemService buildingSystemService,
-            IMortalTaxationSimulationService taxationService)
+            IMortalTaxationSimulationService taxationService,
+            IMinistryFrameworkService ministryFrameworkService)
         {
             _simulationService = simulationService;
             _industryService = industryService;
             _sectOperationsService = sectOperationsService;
             _buildingSystemService = buildingSystemService;
             _taxationService = taxationService;
+            _ministryFrameworkService = ministryFrameworkService;
             _foundation = foundationService.GetInitialState();
             _regionNamesById = _foundation.Regions.ToDictionary(region => region.Id, region => region.Name);
             _townsById = _foundation.Towns.ToDictionary(town => town.Id);
@@ -47,6 +52,7 @@ namespace CoCity.ViewModels
             _buildingState = _buildingSystemService.Initialize(_foundation);
             _industryStates = _industryService.Initialize(_foundation, _foundation.Ministries);
             _taxationState = _taxationService.Initialize(_foundation, _simulationState, _industryStates);
+            _ministryState = _ministryFrameworkService.Initialize(_foundation, _simulationState, _buildingState, _taxationState);
 
             AdvanceTurnCommand = new Microsoft.Maui.Controls.Command(ExecuteAdvanceTurn);
             ConstructSectInfrastructureCommand = new Microsoft.Maui.Controls.Command(ExecuteConstructSectInfrastructure);
@@ -57,7 +63,7 @@ namespace CoCity.ViewModels
         }
 
         public string PageTitle => "Prototype Closed Loop Dashboard";
-        public string PageSubtitle => "Task 1.9 adds sect auto-construction priorities, quantity caps, build-time tracking, and visible project progress.";
+        public string PageSubtitle => "Task 1.10 adds a runtime ministry framework with cases, staffing capacity, and visible ministry reports.";
         public string RealmSummary => $"{_foundation.RealmName} — Turn {SimulationTurnNumber}";
         public int SimulationTurnNumber => _simulationState.TurnNumber;
         public string TaxRateSummary => $"Tax rate: {TaxationPolicyCatalog.Get(_taxationState.SelectedTaxRate).DisplayName}";
@@ -87,6 +93,7 @@ namespace CoCity.ViewModels
         public IReadOnlyList<RecruitmentEventViewModel> RecruitmentEvents { get; private set; } = [];
         public IReadOnlyList<SectOperationEventViewModel> SectOperationEvents { get; private set; } = [];
         public IReadOnlyList<BuildingEventViewModel> BuildingEvents { get; private set; } = [];
+        public IReadOnlyList<MinistryEventViewModel> MinistryEvents { get; private set; } = [];
         public IReadOnlyList<TurnEventViewModel> TurnEvents { get; private set; } = [];
 
         public bool HasTurnEvents => TurnEvents.Count > 0;
@@ -95,6 +102,7 @@ namespace CoCity.ViewModels
         public bool HasBuildingEvents => BuildingEvents.Count > 0;
         public bool HasIndustryEvents => TownIndustries.Count > 0;
         public bool HasTaxationEvents => TownTaxations.Count > 0;
+        public bool HasMinistryEvents => MinistryEvents.Count > 0;
 
         public System.Windows.Input.ICommand AdvanceTurnCommand { get; }
         public System.Windows.Input.ICommand ConstructSectInfrastructureCommand { get; }
@@ -126,6 +134,9 @@ namespace CoCity.ViewModels
             var taxationResult = _taxationService.Step(taxationSeedState, _simulationState, _industryStates);
             _taxationState = taxationResult.NextState;
             _lastTaxationReport = taxationResult.Report;
+            var ministryResult = _ministryFrameworkService.Step(_foundation, _ministryState, _simulationState, _buildingState, _taxationState);
+            _ministryState = ministryResult.NextState;
+            _lastMinistryReport = ministryResult.Report;
 
             BuildDisplayState();
 
@@ -152,6 +163,9 @@ namespace CoCity.ViewModels
             OnPropertyChanged(nameof(HasIndustryEvents));
             OnPropertyChanged(nameof(TownTaxations));
             OnPropertyChanged(nameof(HasTaxationEvents));
+            OnPropertyChanged(nameof(Ministries));
+            OnPropertyChanged(nameof(MinistryEvents));
+            OnPropertyChanged(nameof(HasMinistryEvents));
         }
 
         private void ExecuteConstructSectInfrastructure()
@@ -164,11 +178,13 @@ namespace CoCity.ViewModels
             _buildingState = result.NextState;
             _simulationState = _simulationState with { Sects = result.NextSects };
             _taxationState = _taxationState with { CurrentTreasuryFunds = result.NextTreasuryFunds };
+            _ministryState = _ministryFrameworkService.Recalculate(_foundation, _ministryState, _simulationState, _buildingState, _taxationState);
             _lastBuildingReport = result.Report;
             BuildDisplayState();
 
             OnPropertyChanged(nameof(TreasurySummary));
             OnPropertyChanged(nameof(Sects));
+            OnPropertyChanged(nameof(Ministries));
             OnPropertyChanged(nameof(BuildingEvents));
             OnPropertyChanged(nameof(HasBuildingEvents));
         }
@@ -184,11 +200,13 @@ namespace CoCity.ViewModels
             _buildingState = result.NextState;
             _simulationState = _simulationState with { Sects = result.NextSects };
             _taxationState = _taxationState with { CurrentTreasuryFunds = result.NextTreasuryFunds };
+            _ministryState = _ministryFrameworkService.Recalculate(_foundation, _ministryState, _simulationState, _buildingState, _taxationState);
             _lastBuildingReport = result.Report;
             BuildDisplayState();
 
             OnPropertyChanged(nameof(TreasurySummary));
             OnPropertyChanged(nameof(Towns));
+            OnPropertyChanged(nameof(Ministries));
             OnPropertyChanged(nameof(BuildingEvents));
             OnPropertyChanged(nameof(HasBuildingEvents));
         }
@@ -207,6 +225,7 @@ namespace CoCity.ViewModels
             }
 
             _taxationState = _taxationService.SetTaxRate(_taxationState, _simulationState, _industryStates, taxRate);
+            _ministryState = _ministryFrameworkService.Recalculate(_foundation, _ministryState, _simulationState, _buildingState, _taxationState);
             BuildDisplayState();
 
             OnPropertyChanged(nameof(TreasurySummary));
@@ -215,6 +234,7 @@ namespace CoCity.ViewModels
             OnPropertyChanged(nameof(TaxStabilitySummary));
             OnPropertyChanged(nameof(TownTaxations));
             OnPropertyChanged(nameof(HasTaxationEvents));
+            OnPropertyChanged(nameof(Ministries));
         }
 
         private void BuildDisplayState()
@@ -263,14 +283,19 @@ namespace CoCity.ViewModels
                     OutputSummary: $"Current output: {string.Join(" | ", sect.CurrentOutput.Select(FormatOutputMetric))}"))
                 .ToImmutableArray();
 
-            Ministries = _foundation.Ministries
+            Ministries = _ministryState.Ministries
                 .Select(ministry => new MinistryCardViewModel(
-                    Name: ministry.Name,
+                    Name: ministry.MinistryName,
                     AuthoritySummary: $"Authority: {ministry.Authority.DelegationLevel}. {ministry.Authority.EscalationRule}",
                     ResponsibilitySummary: $"Responsibilities: {string.Join(", ", ministry.Authority.Responsibilities)}",
                     StandardSummary: $"Standard: {ministry.Standard.Name}. {ministry.Standard.Summary}",
                     MinisterSummary: $"Minister: {FormatOfficial(ministry.Minister)}",
-                    TeamSummary: $"Supporting officials: {string.Join("; ", ministry.SupportingOfficials.Select(FormatOfficial))}"))
+                    TeamSummary: $"Supporting officials: {string.Join("; ", ministry.SupportingOfficials.Select(FormatOfficial))}",
+                    CapacitySummary: $"Handling capacity: {ministry.HandlingCapacity} | Active cases: {ministry.ActiveCaseCount} | Escalated: {ministry.EscalatedCaseCount}",
+                    CaseSummary: ministry.ActiveCases.Count == 0
+                        ? "Current docket: none."
+                        : $"Current docket: {string.Join("; ", ministry.ActiveCases.Select(item => item.Summary))}",
+                    ReportSummary: $"Latest report: {ministry.LastSummary}"))
                 .ToImmutableArray();
 
             TownSimulations = _simulationState.Towns
@@ -309,6 +334,7 @@ namespace CoCity.ViewModels
                 RecruitmentEvents = [];
                 SectOperationEvents = [];
                 BuildingEvents = [];
+                MinistryEvents = [];
                 return;
             }
 
@@ -342,6 +368,13 @@ namespace CoCity.ViewModels
                     .Select(evt => new BuildingEventViewModel(evt.OwnerName, evt.Summary))
                     .Concat(_lastBuildingReport.OperationEvents.Select(evt => new BuildingEventViewModel(evt.OwnerName, evt.Summary)))
                     .ToImmutableArray();
+
+            MinistryEvents = _lastMinistryReport?.MinistryEvents
+                .Select(evt => new MinistryEventViewModel(
+                    MinistryName: evt.MinistryName,
+                    Summary: $"{evt.Summary}"))
+                .ToImmutableArray()
+                ?? [];
         }
 
         private void OnPropertyChanged(string propertyName)
@@ -443,7 +476,10 @@ namespace CoCity.ViewModels
         string ResponsibilitySummary,
         string StandardSummary,
         string MinisterSummary,
-        string TeamSummary);
+        string TeamSummary,
+        string CapacitySummary,
+        string CaseSummary,
+        string ReportSummary);
 
     public sealed record TownSimulationCardViewModel(
         string TownName,
@@ -466,6 +502,10 @@ namespace CoCity.ViewModels
 
     public sealed record SectOperationEventViewModel(
         string SectName,
+        string Summary);
+
+    public sealed record MinistryEventViewModel(
+        string MinistryName,
         string Summary);
 
     public sealed record BuildingEventViewModel(
