@@ -9,7 +9,7 @@ Use this file to track implementation status for every planned increment. Update
 | 1.3 | Prototype Closed Loop | Mortal Industry Simulation | Done | Copilot | Completed deterministic industry state/output calculation, added a request-driven sect purchase flow with settlement reporting, surfaced town industry panels in the app, and added unit plus integration coverage for production and purchase behavior. |
 | 1.4 | Prototype Closed Loop | Mortal Taxation Loop | Done | Copilot | Added the baseline tax loop with adjustable rate controls, tax-driven treasury accumulation, lightweight stability pressure, and regression coverage while staying out of 1.11 automation and the full 2.14 stability system. |
 | 1.5 | Prototype Closed Loop | Sect Baseline State | Done | Copilot | Established authoritative runtime sect state for funds, population, loyalty, output, and empty industry preference fields, surfaced it in the dashboard, and preserved 1.6 wage recruitment plus 1.7 autonomous operations for later tasks. |
-| 1.6 | Prototype Closed Loop | Sect Recruitment Workflow | Not Started | - | - |
+| 1.6 | Prototype Closed Loop | Sect Recruitment Workflow | Done | Copilot | Replaced the earlier fixed recruitment placeholder with wage-driven sect hiring, sect wage costs, visible recruitment outcomes, and regression coverage while leaving 1.7 autonomous sect operations for later. |
 | 1.7 | Prototype Closed Loop | Sect Autonomous Operations | Not Started | - | - |
 | 1.8 | Prototype Closed Loop | Foundational Building System | Not Started | - | - |
 | 1.9 | Prototype Closed Loop | Sect Auto-Construction Logic | Not Started | - | - |

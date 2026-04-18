@@ -32,10 +32,14 @@ public sealed class IndustrySimulationPipelineIntegrationTests
         var azureFordIndustryEvent = Assert.Single(
             industryResult.Report.TownIndustryEvents,
             townEvent => townEvent.TownId == "town.azure-ford");
+        var azureRecruitment = Assert.Single(
+            turnResult.Report.RecruitmentEvents,
+            recruitmentEvent => recruitmentEvent.SectId == "sect.azure-talisman-academy");
 
-        Assert.Equal(18332, azureFordTown.CurrentPopulation);
-        Assert.Equal(new LaborForceDistribution(8204, 5469, 4558), azureFordIndustry.LaborForce);
-        Assert.Equal(new IndustryOutput(82040, 32814, 18232), azureFordIndustry.GrossOutput);
+        Assert.Equal(35, azureRecruitment.RecruitsGathered);
+        Assert.Equal(18347, azureFordTown.CurrentPopulation);
+        Assert.Equal(new LaborForceDistribution(8211, 5474, 4561), azureFordIndustry.LaborForce);
+        Assert.Equal(new IndustryOutput(82110, 32844, 18244), azureFordIndustry.GrossOutput);
         Assert.Equal(azureFordIndustry.LaborForce, azureFordIndustryEvent.LaborForce);
         Assert.Equal(azureFordIndustry.GrossOutput, azureFordIndustryEvent.GrossOutput);
         Assert.Equal(azureFordIndustry.GovernmentEfficiency, azureFordIndustryEvent.GovernmentEfficiency);

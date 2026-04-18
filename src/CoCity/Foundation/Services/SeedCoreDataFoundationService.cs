@@ -126,6 +126,7 @@ namespace CoCity.Foundation.Services
                     Population: 164,
                     Loyalty: 78,
                     IndustryPreference: null,
+                    RecruitmentWage: RecruitmentWageLevel.Standard,
                     Output: ImmutableArray.Create(
                         new OutputMetric("Warding talismans", 58, "seals"),
                         new OutputMetric("Ritual commissions", 18, "contracts"))),
@@ -137,6 +138,7 @@ namespace CoCity.Foundation.Services
                     Population: 141,
                     Loyalty: 71,
                     IndustryPreference: null,
+                    RecruitmentWage: RecruitmentWageLevel.Frugal,
                     Output: ImmutableArray.Create(
                         new OutputMetric("Refined ore", 92, "crates"),
                         new OutputMetric("Forged implements", 37, "sets"))),
@@ -148,6 +150,7 @@ namespace CoCity.Foundation.Services
                     Population: 188,
                     Loyalty: 83,
                     IndustryPreference: null,
+                    RecruitmentWage: RecruitmentWageLevel.Generous,
                     Output: ImmutableArray.Create(
                         new OutputMetric("Spirit herbs", 144, "bundles"),
                         new OutputMetric("Alchemy batches", 32, "lots"))));

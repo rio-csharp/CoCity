@@ -9,7 +9,6 @@ namespace CoCity.Foundation.Services
         private const decimal DeclineRateWhenUnsatisfied = 0.02m;
         private const decimal RecruitablesRate = 0.05m;
         private const int MinimumPopulation = 100;
-        private const int RecruitsPerSectPerTurn = 50;
 
         public MortalRealmState Initialize(RealmState foundation)
         {
@@ -45,6 +44,7 @@ namespace CoCity.Foundation.Services
             var recruitsLostByTown = naturalResults.ToDictionary(result => result.TownId, _ => 0);
             var recruitmentEvents = ResolveSectRecruitment(currentSects, regionTownIdsByRegion, remainingRecruitmentPools, recruitsLostByTown);
             var recruitsBySectId = recruitmentEvents.ToDictionary(item => item.SectId, item => item.RecruitsGathered);
+            var wagesPaidBySectId = recruitmentEvents.ToDictionary(item => item.SectId, item => item.WagesPaid);
 
             var nextTownStates = naturalResults
                 .Select(result =>
@@ -89,7 +89,7 @@ namespace CoCity.Foundation.Services
 
             var nextState = new MortalRealmState(
                 Towns: nextTownStates,
-                Sects: BuildNextSectStates(currentSects, regionTownIdsByRegion, nextTownStates, recruitsBySectId),
+                Sects: BuildNextSectStates(currentSects, regionTownIdsByRegion, nextTownStates, recruitsBySectId, wagesPaidBySectId),
                 TurnNumber: nextTurn);
 
             return new TurnResult(NextState: nextState, Report: report);
@@ -121,14 +121,13 @@ namespace CoCity.Foundation.Services
             foreach (var sect in sects)
             {
                 var townIdsInRegion = regionTownIdsByRegion[sect.RegionId];
-
                 var availableRecruitment = townIdsInRegion.Sum(townId => remainingRecruitmentPools[townId]);
-                var recruitsGathered = Math.Min(RecruitsPerSectPerTurn, availableRecruitment);
-
-                if (recruitsGathered == 0)
-                {
-                    continue;
-                }
+                var wagePolicy = SectRecruitmentPolicyCatalog.Get(sect.RecruitmentWage);
+                var wageTarget = wagePolicy.TargetRecruitsPerTurn;
+                var targetRecruits = Math.Min(availableRecruitment, wageTarget);
+                var affordableRecruits = (int)Math.Floor(sect.CurrentFunds / wagePolicy.WagePerRecruit);
+                var recruitsGathered = Math.Min(targetRecruits, affordableRecruits);
+                var wagesPaid = recruitsGathered * wagePolicy.WagePerRecruit;
 
                 var recruitsStillNeeded = recruitsGathered;
                 foreach (var townId in townIdsInRegion)
@@ -153,7 +152,11 @@ namespace CoCity.Foundation.Services
                     SectId: sect.SectId,
                     SectName: sect.SectName,
                     RegionId: sect.RegionId,
-                    RecruitsGathered: recruitsGathered));
+                    RecruitmentWage: sect.RecruitmentWage,
+                    RecruitsGathered: recruitsGathered,
+                    WagesPaid: wagesPaid,
+                    FundsRemaining: sect.CurrentFunds - wagesPaid,
+                    OutcomeSummary: DescribeRecruitmentOutcome(availableRecruitment, wageTarget, targetRecruits, affordableRecruits, recruitsGathered)));
             }
 
             return recruitmentEvents.ToImmutableArray();
@@ -182,8 +185,11 @@ namespace CoCity.Foundation.Services
                         CurrentPopulation: sect.Population,
                         Loyalty: sect.Loyalty,
                         IndustryPreference: sect.IndustryPreference,
+                        RecruitmentWage: sect.RecruitmentWage,
                         CurrentOutput: sect.Output.ToImmutableArray(),
-                        RecruitablesFromRegion: recruitablesFromRegion);
+                        RecruitablesFromRegion: recruitablesFromRegion,
+                        LastRecruitsGained: 0,
+                        LastWagesPaid: 0m);
                 })
                 .ToImmutableArray();
         }
@@ -192,7 +198,8 @@ namespace CoCity.Foundation.Services
             IReadOnlyList<SectSimulationState> sects,
             IReadOnlyDictionary<string, IReadOnlyList<string>> regionTownIdsByRegion,
             IReadOnlyList<MortalTownSimulationState> towns,
-            IReadOnlyDictionary<string, int> recruitsBySectId)
+            IReadOnlyDictionary<string, int> recruitsBySectId,
+            IReadOnlyDictionary<string, decimal> wagesPaidBySectId)
         {
             var remainingPoolsByTown = towns.ToDictionary(town => town.TownId, town => town.RecruitmentPool);
 
@@ -204,11 +211,44 @@ namespace CoCity.Foundation.Services
 
                     return sect with
                     {
+                        CurrentFunds = sect.CurrentFunds - wagesPaidBySectId.GetValueOrDefault(sect.SectId),
                         CurrentPopulation = sect.CurrentPopulation + recruitsBySectId.GetValueOrDefault(sect.SectId),
-                        RecruitablesFromRegion = recruitablesFromRegion
+                        RecruitablesFromRegion = recruitablesFromRegion,
+                        LastRecruitsGained = recruitsBySectId.GetValueOrDefault(sect.SectId),
+                        LastWagesPaid = wagesPaidBySectId.GetValueOrDefault(sect.SectId)
                     };
                 })
                 .ToImmutableArray();
+        }
+
+        private static string DescribeRecruitmentOutcome(
+            int availableRecruitment,
+            int wageTarget,
+            int targetRecruits,
+            int affordableRecruits,
+            int recruitsGathered)
+        {
+            if (availableRecruitment == 0)
+            {
+                return "No recruitable mortals remained in the region.";
+            }
+
+            if (affordableRecruits == 0)
+            {
+                return "Funds were too low to pay even one recruit at the current wage.";
+            }
+
+            if (recruitsGathered < targetRecruits)
+            {
+                return "Recruitment stopped when sect funds ran short.";
+            }
+
+            if (availableRecruitment < wageTarget)
+            {
+                return "Regional recruitment supply limited this turn's hiring.";
+            }
+
+            return "Recruitment met the current wage-driven hiring target.";
         }
 
         private static NaturalTownResult ResolveNaturalChange(

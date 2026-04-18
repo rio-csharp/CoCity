@@ -47,6 +47,13 @@ namespace CoCity.Foundation
         Commerce
     }
 
+    public enum RecruitmentWageLevel
+    {
+        Frugal,
+        Standard,
+        Generous
+    }
+
     /// <summary>Base output per worker for each industry type.</summary>
     public sealed record IndustryBaseOutputRates(
         int AgriculturePerWorker,
@@ -61,6 +68,7 @@ namespace CoCity.Foundation
         int Population,
         int Loyalty,
         MortalIndustryType? IndustryPreference,
+        RecruitmentWageLevel RecruitmentWage,
         IReadOnlyList<OutputMetric> Output);
 
     public sealed record OutputMetric(
@@ -114,8 +122,11 @@ namespace CoCity.Foundation
         int CurrentPopulation,
         int Loyalty,
         MortalIndustryType? IndustryPreference,
+        RecruitmentWageLevel RecruitmentWage,
         IReadOnlyList<OutputMetric> CurrentOutput,
-        int RecruitablesFromRegion);
+        int RecruitablesFromRegion,
+        int LastRecruitsGained,
+        decimal LastWagesPaid);
 
     /// <summary>Per-town simulation state.</summary>
     public sealed record MortalTownSimulationState(
@@ -147,7 +158,11 @@ namespace CoCity.Foundation
         string SectId,
         string SectName,
         string RegionId,
-        int RecruitsGathered);
+        RecruitmentWageLevel RecruitmentWage,
+        int RecruitsGathered,
+        decimal WagesPaid,
+        decimal FundsRemaining,
+        string OutcomeSummary);
 
     // ─────────────────────────────────────────────────────────────────────────
     // Industry simulation model

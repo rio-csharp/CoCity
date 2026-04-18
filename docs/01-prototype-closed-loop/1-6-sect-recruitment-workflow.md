@@ -13,6 +13,12 @@ Implement the scope below as production-ready game behavior rather than temporar
 - Recruitment reduces mortal population.
 - Sects offering higher wages recruit more effectively.
 
+## Scope Notes
+- Task 1.2 already introduced a basic sect recruitment effect. This task upgrades that placeholder behavior into a wage-driven recruitment workflow without replacing the broader turn structure built in 1.2 through 1.5.
+- It is acceptable to model recruitment wages through a small seeded policy set or other deterministic rule set as long as wage level, hires, and wage costs are visible in runtime state or reports.
+- The implementation may expose recruitment wage information in the dashboard, but it should not expand into the general player action framework planned for Task 1.12.
+- Do not implement sect upkeep, autonomous purchasing, or output degradation from low funds here; those belong to Task 1.7.
+
 ## Code Design
 - Prioritize deterministic turn resolution and highly visible state changes.
 - Keep administrative logic, world simulation, and presentation concerns separated so the prototype can expand without rewrites.
