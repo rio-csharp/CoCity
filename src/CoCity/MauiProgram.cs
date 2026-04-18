@@ -29,6 +29,7 @@ namespace CoCity
             builder.Services.AddSingleton<IMinistryFrameworkService, DefaultMinistryFrameworkService>();
             builder.Services.AddSingleton<IPlayerActionService, DefaultPlayerActionService>();
             builder.Services.AddSingleton<ITurnAdvancementPipelineService, DefaultTurnAdvancementPipelineService>();
+            builder.Services.AddSingleton<IRealmNotificationService, DefaultRealmNotificationService>();
             builder.Services.AddTransient<MainPageViewModel>();
             builder.Services.AddTransient<MainPage>();
 

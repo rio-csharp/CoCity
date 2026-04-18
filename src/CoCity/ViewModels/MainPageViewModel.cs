@@ -17,6 +17,7 @@ namespace CoCity.ViewModels
         private readonly IMinistryFrameworkService _ministryFrameworkService;
         private readonly IPlayerActionService _playerActionService;
         private readonly ITurnAdvancementPipelineService _turnAdvancementPipelineService;
+        private readonly IRealmNotificationService _notificationService;
         private readonly IReadOnlyDictionary<string, string> _regionNamesById;
         private readonly IReadOnlyDictionary<string, MortalTownState> _townsById;
         private MortalRealmState _simulationState;
@@ -33,6 +34,7 @@ namespace CoCity.ViewModels
         private string? _selectedMinistryId;
         private int _selectedRequestIndex;
         private string _lastPlayerActionSummary = "No player action taken yet.";
+        private RealmNotificationState _notificationState = new([], [], "Alerts: 0 | Recent events: 0");
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -45,7 +47,8 @@ namespace CoCity.ViewModels
             IMortalTaxationSimulationService taxationService,
             IMinistryFrameworkService ministryFrameworkService,
             IPlayerActionService playerActionService,
-            ITurnAdvancementPipelineService turnAdvancementPipelineService)
+            ITurnAdvancementPipelineService turnAdvancementPipelineService,
+            IRealmNotificationService notificationService)
         {
             _simulationService = simulationService;
             _industryService = industryService;
@@ -55,6 +58,7 @@ namespace CoCity.ViewModels
             _ministryFrameworkService = ministryFrameworkService;
             _playerActionService = playerActionService;
             _turnAdvancementPipelineService = turnAdvancementPipelineService;
+            _notificationService = notificationService;
             _foundation = foundationService.GetInitialState();
             _regionNamesById = _foundation.Regions.ToDictionary(region => region.Id, region => region.Name);
             _townsById = _foundation.Towns.ToDictionary(town => town.Id);
@@ -64,6 +68,7 @@ namespace CoCity.ViewModels
             _taxationState = _taxationService.Initialize(_foundation, _simulationState, _industryStates);
             _ministryState = _ministryFrameworkService.Initialize(_foundation, _simulationState, _buildingState, _taxationState);
             _selectedMinistryId = _ministryState.Ministries.FirstOrDefault()?.MinistryId;
+            RefreshNotificationState();
 
             AdvanceTurnCommand = new Microsoft.Maui.Controls.Command(ExecuteAdvanceTurn);
             ConstructSectInfrastructureCommand = new Microsoft.Maui.Controls.Command(ExecuteConstructSectInfrastructure);
@@ -80,7 +85,7 @@ namespace CoCity.ViewModels
         }
 
         public string PageTitle => "Prototype Closed Loop Dashboard";
-        public string PageSubtitle => "Task 1.14 reorganizes the prototype into a clearer baseline interface for the closed-loop governance flow.";
+        public string PageSubtitle => "Task 1.15 adds a unified baseline alerts and event history layer on top of the closed-loop interface.";
         public string RealmSummary => $"{_foundation.RealmName} — Turn {SimulationTurnNumber}";
         public int SimulationTurnNumber => _simulationState.TurnNumber;
         public string TurnPipelineSummary => _lastTurnPipelineReport is null
@@ -122,6 +127,7 @@ namespace CoCity.ViewModels
                 return $"Recent outcomes: {_lastReport?.TownEvents.Count ?? 0} town changes | {_lastReport?.RecruitmentEvents.Count ?? 0} recruitment updates | {_lastSectOperationsReport?.SectEvents.Count ?? 0} sect operations | {buildingUpdates} building updates | {_lastMinistryReport?.MinistryEvents.Count ?? 0} ministry reports.";
             }
         }
+        public string NotificationSummary => _notificationState.Summary;
         public string SelectedMinistrySummary
         {
             get
@@ -169,6 +175,8 @@ namespace CoCity.ViewModels
         public IReadOnlyList<BuildingEventViewModel> BuildingEvents { get; private set; } = [];
         public IReadOnlyList<MinistryEventViewModel> MinistryEvents { get; private set; } = [];
         public IReadOnlyList<TurnEventViewModel> TurnEvents { get; private set; } = [];
+        public IReadOnlyList<NotificationItemViewModel> Alerts { get; private set; } = [];
+        public IReadOnlyList<NotificationItemViewModel> RecentNotifications { get; private set; } = [];
 
         public bool HasTurnEvents => TurnEvents.Count > 0;
         public bool HasRecruitmentEvents => RecruitmentEvents.Count > 0;
@@ -178,6 +186,8 @@ namespace CoCity.ViewModels
         public bool HasTaxationEvents => TownTaxations.Count > 0;
         public bool HasMinistryEvents => MinistryEvents.Count > 0;
         public bool HasPendingRequests => GetPendingRequests().Length > 0;
+        public bool HasAlerts => Alerts.Count > 0;
+        public bool HasRecentNotifications => RecentNotifications.Count > 0;
 
         public System.Windows.Input.ICommand AdvanceTurnCommand { get; }
         public System.Windows.Input.ICommand ConstructSectInfrastructureCommand { get; }
@@ -193,6 +203,7 @@ namespace CoCity.ViewModels
 
         private void ExecuteAdvanceTurn()
         {
+            var previousRealmState = _simulationState;
             var pipelineResult = _turnAdvancementPipelineService.Advance(
                 _foundation,
                 new TurnAdvancementState(
@@ -214,6 +225,7 @@ namespace CoCity.ViewModels
             _lastTaxationReport = pipelineResult.Report.TaxationReport;
             _lastMinistryReport = pipelineResult.Report.MinistryReport;
             RefreshSelections();
+            RefreshNotificationState(previousRealmState, pipelineResult.Report);
 
             BuildDisplayState();
 
@@ -238,6 +250,7 @@ namespace CoCity.ViewModels
             OnPropertyChanged(nameof(Ministries));
             OnPropertyChanged(nameof(MinistryEvents));
             OnPropertyChanged(nameof(HasMinistryEvents));
+            RaiseNotificationProperties();
             RaisePlayerActionProperties();
         }
 
@@ -253,6 +266,7 @@ namespace CoCity.ViewModels
             _taxationState = _taxationState with { CurrentTreasuryFunds = result.NextTreasuryFunds };
             _ministryState = _ministryFrameworkService.Recalculate(_foundation, _ministryState, _simulationState, _buildingState, _taxationState);
             RefreshSelections();
+            RefreshNotificationState(turnReport: _lastTurnPipelineReport);
             _lastBuildingReport = result.Report;
             BuildDisplayState();
 
@@ -261,6 +275,7 @@ namespace CoCity.ViewModels
             OnPropertyChanged(nameof(Ministries));
             OnPropertyChanged(nameof(BuildingEvents));
             OnPropertyChanged(nameof(HasBuildingEvents));
+            RaiseNotificationProperties();
             RaisePlayerActionProperties();
         }
 
@@ -277,6 +292,7 @@ namespace CoCity.ViewModels
             _taxationState = _taxationState with { CurrentTreasuryFunds = result.NextTreasuryFunds };
             _ministryState = _ministryFrameworkService.Recalculate(_foundation, _ministryState, _simulationState, _buildingState, _taxationState);
             RefreshSelections();
+            RefreshNotificationState(turnReport: _lastTurnPipelineReport);
             _lastBuildingReport = result.Report;
             BuildDisplayState();
 
@@ -285,6 +301,7 @@ namespace CoCity.ViewModels
             OnPropertyChanged(nameof(Ministries));
             OnPropertyChanged(nameof(BuildingEvents));
             OnPropertyChanged(nameof(HasBuildingEvents));
+            RaiseNotificationProperties();
             RaisePlayerActionProperties();
         }
 
@@ -304,12 +321,14 @@ namespace CoCity.ViewModels
             _taxationState = _taxationService.SetTaxRate(_taxationState, _simulationState, _industryStates, taxRate);
             _ministryState = _ministryFrameworkService.Recalculate(_foundation, _ministryState, _simulationState, _buildingState, _taxationState);
             RefreshSelections();
+            RefreshNotificationState(turnReport: _lastTurnPipelineReport);
             BuildDisplayState();
 
             RaiseOverviewProperties();
             OnPropertyChanged(nameof(TownTaxations));
             OnPropertyChanged(nameof(HasTaxationEvents));
             OnPropertyChanged(nameof(Ministries));
+            RaiseNotificationProperties();
             RaisePlayerActionProperties();
         }
 
@@ -348,10 +367,12 @@ namespace CoCity.ViewModels
                 ministry.MinistryId);
             _lastPlayerActionSummary = $"Updated {ministry.MinistryName} authority to {_ministryState.Ministries.Single(item => item.MinistryId == ministry.MinistryId).Authority.DelegationLevel}.";
             RefreshSelections();
+            RefreshNotificationState(turnReport: _lastTurnPipelineReport);
             BuildDisplayState();
 
             RaiseOverviewProperties();
             OnPropertyChanged(nameof(Ministries));
+            RaiseNotificationProperties();
             RaisePlayerActionProperties();
         }
 
@@ -371,10 +392,12 @@ namespace CoCity.ViewModels
                 ministry.MinistryId);
             _lastPlayerActionSummary = $"Updated {ministry.MinistryName} handling standard to {_ministryState.Ministries.Single(item => item.MinistryId == ministry.MinistryId).Standard.Name}.";
             RefreshSelections();
+            RefreshNotificationState(turnReport: _lastTurnPipelineReport);
             BuildDisplayState();
 
             RaiseOverviewProperties();
             OnPropertyChanged(nameof(Ministries));
+            RaiseNotificationProperties();
             RaisePlayerActionProperties();
         }
 
@@ -430,11 +453,13 @@ namespace CoCity.ViewModels
             _taxationState = result.NextTaxationState;
             _lastPlayerActionSummary = result.Summary;
             RefreshSelections();
+            RefreshNotificationState(turnReport: _lastTurnPipelineReport);
             BuildDisplayState();
 
             RaiseOverviewProperties();
             OnPropertyChanged(nameof(Sects));
             OnPropertyChanged(nameof(Ministries));
+            RaiseNotificationProperties();
             RaisePlayerActionProperties();
         }
 
@@ -529,6 +554,19 @@ namespace CoCity.ViewModels
                     GrossTaxBaseSummary: $"Gross tax base: {FormatNumber(taxation.GrossTaxBase)} taels",
                     CollectedRevenueSummary: $"Projected collection: {FormatNumber(taxation.CollectedRevenue)} taels",
                     StabilitySummary: $"Stability effect: {FormatSignedNumber(taxation.StabilityDelta)} ({taxation.StabilitySummary})"))
+                .ToImmutableArray();
+
+            Alerts = _notificationState.Alerts
+                .Select(item => new NotificationItemViewModel(
+                    SeverityLabel: item.Severity.ToString().ToUpperInvariant(),
+                    Title: item.Title,
+                    Summary: item.Summary))
+                .ToImmutableArray();
+            RecentNotifications = _notificationState.RecentEvents
+                .Select(item => new NotificationItemViewModel(
+                    SeverityLabel: item.Severity.ToString().ToUpperInvariant(),
+                    Title: item.Title,
+                    Summary: item.Summary))
                 .ToImmutableArray();
 
             if (_lastReport is null)
@@ -628,7 +666,28 @@ namespace CoCity.ViewModels
             OnPropertyChanged(nameof(NationalMortalSummary));
             OnPropertyChanged(nameof(NationalMinistrySummary));
             OnPropertyChanged(nameof(LastTurnOutcomeSummary));
+            OnPropertyChanged(nameof(NotificationSummary));
         }
+
+        private void RaiseNotificationProperties()
+        {
+            OnPropertyChanged(nameof(Alerts));
+            OnPropertyChanged(nameof(RecentNotifications));
+            OnPropertyChanged(nameof(HasAlerts));
+            OnPropertyChanged(nameof(HasRecentNotifications));
+            OnPropertyChanged(nameof(NotificationSummary));
+        }
+
+        private void RefreshNotificationState(
+            MortalRealmState? previousRealmState = null,
+            TurnAdvancementReport? turnReport = null)
+            => _notificationState = _notificationService.Build(new RealmNotificationContext(
+                Foundation: _foundation,
+                CurrentRealmState: _simulationState,
+                TaxationState: _taxationState,
+                MinistryState: _ministryState,
+                TurnReport: turnReport,
+                PreviousRealmState: previousRealmState));
 
         private MinistrySimulationState? GetSelectedMinistry()
             => _selectedMinistryId is null
@@ -779,6 +838,11 @@ namespace CoCity.ViewModels
 
     public sealed record MinistryEventViewModel(
         string MinistryName,
+        string Summary);
+
+    public sealed record NotificationItemViewModel(
+        string SeverityLabel,
+        string Title,
         string Summary);
 
     public sealed record BuildingEventViewModel(

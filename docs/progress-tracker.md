@@ -18,7 +18,7 @@ Use this file to track implementation status for every planned increment. Update
 | 1.12 | Prototype Closed Loop | Player Core Actions | Done | Copilot | Added player-facing ministry focus controls, authority and handling-standard cycling, visible pending request review, and manual approval or rejection flows with regression coverage while keeping the explicit turn pipeline refactor for Task 1.13. |
 | 1.13 | Prototype Closed Loop | Turn Advancement Pipeline | Done | Copilot | Extracted the ordered turn pipeline into a dedicated orchestration service, routed Advance Turn through a unified result/report surface, surfaced pipeline status in the dashboard, and added regression coverage for deterministic ordered resolution. |
 | 1.14 | Prototype Closed Loop | Baseline User Interface | Done | Copilot | Reorganized the prototype dashboard into clearer national, sect, mortal, and ministry panels, kept turn and policy controls visible, and preserved the existing closed-loop reports without introducing a separate alert system. |
-| 1.15 | Prototype Closed Loop | Baseline Events and Alerts | Not Started | - | - |
+| 1.15 | Prototype Closed Loop | Baseline Events and Alerts | Done | Copilot | Added a unified notification layer for expansion requests, treasury pressure, stability pressure, population decline, loyalty decline, and recent ministry updates, then surfaced it in the baseline overview without adding a second simulation path. |
 | 2.1 | Management Ecosystem | Sect Industry Framework | Not Started | - | - |
 | 2.2 | Management Ecosystem | Industry Efficiency Rules | Not Started | - | - |
 | 2.3 | Management Ecosystem | Sect Production Chains | Not Started | - | - |
