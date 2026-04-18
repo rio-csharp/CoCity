@@ -14,6 +14,11 @@ Implement the scope below as production-ready game behavior rather than temporar
 - Show warnings when the national treasury runs low.
 - Show warnings when sect loyalty declines.
 
+## Scope Notes
+- Reuse the current turn pipeline, ministry state, taxation state, and sect runtime state to shape alerts instead of creating a second simulation path.
+- Introduce a unified notification model for active alerts and recent events so the overview can explain warnings consistently.
+- Keep the work focused on baseline warnings and recent-history surfacing; broader event chains and advanced incident systems stay out of scope.
+
 ## Code Design
 - Prioritize deterministic turn resolution and highly visible state changes.
 - Keep administrative logic, world simulation, and presentation concerns separated so the prototype can expand without rewrites.

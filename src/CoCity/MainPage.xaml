@@ -51,20 +51,54 @@
                                 Command="{Binding ConstructMortalInfrastructureCommand}" />
                     </FlexLayout>
 
-                    <Label Text="Ministry Reports"
+                    <Label Text="Alerts and Recent Events"
+                           FontAttributes="Bold"
+                           FontSize="18" />
+                    <Label Text="{Binding NotificationSummary}" />
+
+                    <Label Text="Active Alerts"
                            FontAttributes="Bold"
                            FontSize="18"
-                           IsVisible="{Binding HasMinistryEvents}" />
+                           IsVisible="{Binding HasAlerts}" />
 
-                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding MinistryEvents}"
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Alerts}"
                                          Spacing="8"
-                                         IsVisible="{Binding HasMinistryEvents}">
+                                         IsVisible="{Binding HasAlerts}">
                         <BindableLayout.ItemTemplate>
-                            <DataTemplate x:DataType="viewModels:MinistryEventViewModel">
+                            <DataTemplate x:DataType="viewModels:NotificationItemViewModel">
                                 <Label>
                                     <Label.FormattedText>
                                         <FormattedString>
-                                            <Span Text="{Binding MinistryName}" FontAttributes="Bold" />
+                                            <Span Text="[" />
+                                            <Span Text="{Binding SeverityLabel}" FontAttributes="Bold" />
+                                            <Span Text="] " />
+                                            <Span Text="{Binding Title}" FontAttributes="Bold" />
+                                            <Span Text=": " />
+                                            <Span Text="{Binding Summary}" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+
+                    <Label Text="Recent Event History"
+                           FontAttributes="Bold"
+                           FontSize="18"
+                           IsVisible="{Binding HasRecentNotifications}" />
+
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding RecentNotifications}"
+                                         Spacing="8"
+                                         IsVisible="{Binding HasRecentNotifications}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:NotificationItemViewModel">
+                                <Label>
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="[" />
+                                            <Span Text="{Binding SeverityLabel}" FontAttributes="Bold" />
+                                            <Span Text="] " />
+                                            <Span Text="{Binding Title}" FontAttributes="Bold" />
                                             <Span Text=": " />
                                             <Span Text="{Binding Summary}" />
                                         </FormattedString>
