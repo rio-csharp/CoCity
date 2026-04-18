@@ -18,6 +18,7 @@
                    SemanticProperties.HeadingLevel="Level2" />
 
             <Label Text="{Binding RealmSummary}" />
+            <Label Text="{Binding TurnPipelineSummary}" />
             <Label Text="{Binding TreasurySummary}" />
             <Label Text="{Binding TaxRateSummary}" />
             <Label Text="{Binding TaxRevenueSummary}" />
