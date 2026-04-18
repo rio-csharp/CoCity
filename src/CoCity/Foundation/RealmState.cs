@@ -146,6 +146,8 @@ namespace CoCity.Foundation
         int ProcessedCaseCount,
         int EscalatedCaseCount,
         IReadOnlyList<MinistryCaseState> ActiveCases,
+        IReadOnlyList<MinistryDecisionState> ApprovedCases,
+        IReadOnlyList<MinistryDecisionState> RejectedCases,
         IReadOnlyList<MinistryEscalationState> PendingEscalations,
         string LastSummary);
 
@@ -170,6 +172,13 @@ namespace CoCity.Foundation
         string SubjectId,
         string SubjectName,
         string Reason);
+
+    public sealed record MinistryDecisionState(
+        string CaseId,
+        MinistryCaseType CaseType,
+        string SubjectId,
+        string SubjectName,
+        string Summary);
 
     public sealed record MinistryTurnReport(
         int TurnNumber,

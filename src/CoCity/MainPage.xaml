@@ -41,6 +41,36 @@
                         HorizontalOptions="Start" />
             </HorizontalStackLayout>
 
+            <Label Text="{Binding SelectedMinistrySummary}" />
+            <Label Text="{Binding SelectedMinistryPolicySummary}" />
+
+            <HorizontalStackLayout Spacing="12">
+                <Button Text="Next Ministry"
+                        Command="{Binding CycleMinistryFocusCommand}"
+                        HorizontalOptions="Start" />
+                <Button Text="Change Authority"
+                        Command="{Binding ChangeMinistryAuthorityCommand}"
+                        HorizontalOptions="Start" />
+                <Button Text="Change Standard"
+                        Command="{Binding ChangeMinistryStandardCommand}"
+                        HorizontalOptions="Start" />
+            </HorizontalStackLayout>
+
+            <Label Text="{Binding PendingRequestSummary}" />
+            <Label Text="{Binding LastPlayerActionSummary}" />
+
+            <HorizontalStackLayout Spacing="12">
+                <Button Text="Next Request"
+                        Command="{Binding NextPendingRequestCommand}"
+                        HorizontalOptions="Start" />
+                <Button Text="Approve Request"
+                        Command="{Binding ApprovePendingRequestCommand}"
+                        HorizontalOptions="Start" />
+                <Button Text="Reject Request"
+                        Command="{Binding RejectPendingRequestCommand}"
+                        HorizontalOptions="Start" />
+            </HorizontalStackLayout>
+
             <!-- Turn Control -->
             <Button Text="Advance Turn"
                     Command="{Binding AdvanceTurnCommand}"

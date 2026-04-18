@@ -27,6 +27,7 @@ namespace CoCity
             builder.Services.AddSingleton<IBuildingSystemService, DefaultBuildingSystemService>();
             builder.Services.AddSingleton<IMortalTaxationSimulationService, DefaultMortalTaxationSimulationService>();
             builder.Services.AddSingleton<IMinistryFrameworkService, DefaultMinistryFrameworkService>();
+            builder.Services.AddSingleton<IPlayerActionService, DefaultPlayerActionService>();
             builder.Services.AddTransient<MainPageViewModel>();
             builder.Services.AddTransient<MainPage>();
 
