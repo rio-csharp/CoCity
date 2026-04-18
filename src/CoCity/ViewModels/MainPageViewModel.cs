@@ -45,7 +45,7 @@ namespace CoCity.ViewModels
         }
 
         public string PageTitle => "Prototype Closed Loop Dashboard";
-        public string PageSubtitle => "Task 1.5 promotes sects into runtime state with visible funds, population, loyalty, region ties, and baseline industry preference tracking.";
+        public string PageSubtitle => "Task 1.6 upgrades sect recruitment into a wage-driven workflow with visible hires, wage costs, and sect-fund changes.";
         public string RealmSummary => $"{_foundation.RealmName} — Turn {SimulationTurnNumber}";
         public int SimulationTurnNumber => _simulationState.TurnNumber;
         public string TaxRateSummary => $"Tax rate: {TaxationPolicyCatalog.Get(_taxationState.SelectedTaxRate).DisplayName}";
@@ -174,7 +174,8 @@ namespace CoCity.ViewModels
                     FinanceSummary: $"Funds: {FormatNumber(sect.CurrentFunds)} taels | Population: {FormatNumber(sect.CurrentPopulation)}",
                     LoyaltySummary: $"Loyalty: {FormatNumber(sect.Loyalty)}",
                     IndustryPreferenceSummary: $"Industry preference: {FormatIndustryPreference(sect.IndustryPreference)}",
-                    RecruitmentSummary: $"Recruitables remaining in region: {FormatNumber(sect.RecruitablesFromRegion)}",
+                    RecruitmentPolicySummary: $"Recruitment wage: {FormatRecruitmentWage(sect.RecruitmentWage)} ({FormatNumber(SectRecruitmentPolicyCatalog.Get(sect.RecruitmentWage).WagePerRecruit)} taels per recruit)",
+                    RecruitmentSummary: $"Last hires: {FormatNumber(sect.LastRecruitsGained)} | Last wages paid: {FormatNumber(sect.LastWagesPaid)} taels | Recruitables remaining: {FormatNumber(sect.RecruitablesFromRegion)}",
                     OutputSummary: $"Current output: {string.Join(" | ", sect.CurrentOutput.Select(FormatOutputMetric))}"))
                 .ToImmutableArray();
 
@@ -239,7 +240,7 @@ namespace CoCity.ViewModels
             RecruitmentEvents = _lastReport.RecruitmentEvents
                 .Select(recruitmentEvent => new RecruitmentEventViewModel(
                     SectName: recruitmentEvent.SectName,
-                    RecruitsSummary: $"Recruited {FormatNumber(recruitmentEvent.RecruitsGathered)} mortals from {_regionNamesById.GetValueOrDefault(recruitmentEvent.RegionId, "Unknown region")}"))
+                    RecruitsSummary: $"{FormatRecruitmentWage(recruitmentEvent.RecruitmentWage)} wage recruited {FormatNumber(recruitmentEvent.RecruitsGathered)} mortals from {_regionNamesById.GetValueOrDefault(recruitmentEvent.RegionId, "Unknown region")}, paid {FormatNumber(recruitmentEvent.WagesPaid)} taels, left {FormatNumber(recruitmentEvent.FundsRemaining)} taels. {recruitmentEvent.OutcomeSummary}"))
                 .ToImmutableArray();
         }
 
@@ -257,6 +258,9 @@ namespace CoCity.ViewModels
 
         private static string FormatIndustryPreference(MortalIndustryType? industryPreference)
             => industryPreference?.ToString() ?? "None yet";
+
+        private static string FormatRecruitmentWage(RecruitmentWageLevel recruitmentWage)
+            => SectRecruitmentPolicyCatalog.Get(recruitmentWage).DisplayName;
 
         private static string FormatNumber(decimal value)
         {
@@ -295,6 +299,7 @@ namespace CoCity.ViewModels
         string FinanceSummary,
         string LoyaltySummary,
         string IndustryPreferenceSummary,
+        string RecruitmentPolicySummary,
         string RecruitmentSummary,
         string OutputSummary);
 

@@ -243,6 +243,7 @@
                                   <Label Text="{Binding FinanceSummary}" />
                                   <Label Text="{Binding LoyaltySummary}" />
                                   <Label Text="{Binding IndustryPreferenceSummary}" />
+                                  <Label Text="{Binding RecruitmentPolicySummary}" />
                                   <Label Text="{Binding RecruitmentSummary}" />
                                   <Label Text="{Binding OutputSummary}" />
                               </VerticalStackLayout>

@@ -20,8 +20,11 @@ public sealed class DefaultMortalRealmSimulationServiceSectStateTests
         Assert.Equal(foundationSect.Population, simulatedSect.CurrentPopulation);
         Assert.Equal(foundationSect.Loyalty, simulatedSect.Loyalty);
         Assert.Null(simulatedSect.IndustryPreference);
+        Assert.Equal(foundationSect.RecruitmentWage, simulatedSect.RecruitmentWage);
         Assert.Equal(foundationSect.Output, simulatedSect.CurrentOutput);
         Assert.True(simulatedSect.RecruitablesFromRegion > 0);
+        Assert.Equal(0, simulatedSect.LastRecruitsGained);
+        Assert.Equal(0m, simulatedSect.LastWagesPaid);
     }
 
     [Fact]
@@ -42,7 +45,7 @@ public sealed class DefaultMortalRealmSimulationServiceSectStateTests
     }
 
     [Fact]
-    public void Step_applies_recruitment_results_to_runtime_sect_population_without_changing_baseline_fields()
+    public void Step_applies_recruitment_results_to_runtime_sect_population_and_wage_costs()
     {
         var foundation = new SeedCoreDataFoundationService().GetInitialState();
         var simulationService = new DefaultMortalRealmSimulationService();
@@ -55,9 +58,12 @@ public sealed class DefaultMortalRealmSimulationServiceSectStateTests
         var nextSect = Assert.Single(result.NextState.Sects, sect => sect.SectId == recruitmentEvent.SectId);
 
         Assert.Equal(initialSect.CurrentPopulation + recruitmentEvent.RecruitsGathered, nextSect.CurrentPopulation);
-        Assert.Equal(initialSect.CurrentFunds, nextSect.CurrentFunds);
+        Assert.Equal(initialSect.CurrentFunds - recruitmentEvent.WagesPaid, nextSect.CurrentFunds);
         Assert.Equal(initialSect.Loyalty, nextSect.Loyalty);
         Assert.Equal(initialSect.IndustryPreference, nextSect.IndustryPreference);
+        Assert.Equal(initialSect.RecruitmentWage, nextSect.RecruitmentWage);
         Assert.Equal(initialSect.CurrentOutput, nextSect.CurrentOutput);
+        Assert.Equal(recruitmentEvent.RecruitsGathered, nextSect.LastRecruitsGained);
+        Assert.Equal(recruitmentEvent.WagesPaid, nextSect.LastWagesPaid);
     }
 }
