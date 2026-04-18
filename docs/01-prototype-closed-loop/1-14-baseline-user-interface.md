@@ -14,6 +14,11 @@ Implement the scope below as production-ready game behavior rather than temporar
 - Provide a ministry panel for officials, authority, and handling standards.
 - Provide a turn-advance button and turn counter display.
 
+## Scope Notes
+- Reorganize the existing dashboard surfaces into clearer baseline panels instead of inventing a separate UI path or replacing the underlying simulation services.
+- Keep the player-facing controls for taxation, construction, ministry focus, and escalation decisions visible in the baseline interface.
+- Preserve current reports and event visibility, but defer dedicated alert curation and event-system consolidation to Task 1.15.
+
 ## Code Design
 - Prioritize deterministic turn resolution and highly visible state changes.
 - Keep administrative logic, world simulation, and presentation concerns separated so the prototype can expand without rewrites.
