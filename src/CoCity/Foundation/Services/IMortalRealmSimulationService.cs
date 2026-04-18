@@ -13,7 +13,7 @@ namespace CoCity.Foundation.Services
         MortalRealmState Initialize(RealmState foundation);
 
         /// <summary>Advances the simulation by one turn. Deterministic: same inputs → same outputs.</summary>
-        TurnResult Step(RealmState foundation, MortalRealmState currentState);
+        TurnResult Step(RealmState foundation, MortalRealmState currentState, TaxRateLevel taxRate = TaxRateLevel.Standard);
     }
 
     /// <summary>Return value of Step(): next state + report of what happened.</summary>
