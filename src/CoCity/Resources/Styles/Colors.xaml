@@ -11,6 +11,19 @@
     <Color x:Key="Secondary">#DFD8F7</Color>
     <Color x:Key="SecondaryDarkText">#9880e5</Color>
     <Color x:Key="Tertiary">#2B0B98</Color>
+    <Color x:Key="DayCanvas">#F4EBD9</Color>
+    <Color x:Key="DayPanel">#FFF9EF</Color>
+    <Color x:Key="DayPanelAccent">#E5D1AA</Color>
+    <Color x:Key="DayHeading">#3C2515</Color>
+    <Color x:Key="DayMutedText">#7A644F</Color>
+    <Color x:Key="DayAction">#7B4F2D</Color>
+    <Color x:Key="NightCanvas">#0D1420</Color>
+    <Color x:Key="NightPanel">#172131</Color>
+    <Color x:Key="NightPanelAccent">#30435E</Color>
+    <Color x:Key="NightHeading">#F0E6D2</Color>
+    <Color x:Key="NightMutedText">#A3B4C6</Color>
+    <Color x:Key="NightAction">#4E78B5</Color>
+    <Color x:Key="WarningAmber">#D9A441</Color>
 
     <Color x:Key="White">White</Color>
     <Color x:Key="Black">Black</Color>
@@ -32,6 +45,8 @@
     <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}"/>
     <SolidColorBrush x:Key="WhiteBrush" Color="{StaticResource White}"/>
     <SolidColorBrush x:Key="BlackBrush" Color="{StaticResource Black}"/>
+    <SolidColorBrush x:Key="PanelBackgroundBrush" Color="{AppThemeBinding Light={StaticResource DayPanel}, Dark={StaticResource NightPanel}}" />
+    <SolidColorBrush x:Key="HeroPanelBackgroundBrush" Color="{AppThemeBinding Light=#F0DEC0, Dark=#101B2B}" />
 
     <SolidColorBrush x:Key="Gray100Brush" Color="{StaticResource Gray100}"/>
     <SolidColorBrush x:Key="Gray200Brush" Color="{StaticResource Gray200}"/>
