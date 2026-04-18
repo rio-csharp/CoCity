@@ -10,7 +10,7 @@ namespace CoCity.Foundation.Services
                 Sects: foundation.Sects
                     .OrderBy(sect => sect.RegionId)
                     .ThenBy(sect => sect.Id)
-                    .Select(sect => new SectBuildingInventoryState(sect.Id, []))
+                    .Select(sect => new SectBuildingInventoryState(sect.Id, [], null))
                     .ToImmutableArray(),
                 Towns: foundation.Towns
                     .OrderBy(town => town.RegionId)
@@ -28,6 +28,11 @@ namespace CoCity.Foundation.Services
                 .Select(sect =>
                 {
                     var inventory = sectInventories[sect.SectId];
+                    if (inventory.ActiveProject is not null)
+                    {
+                        return sect;
+                    }
+
                     var nextBuilding = GetNextSectBuilding(inventory.Buildings);
                     if (nextBuilding is null)
                     {
@@ -42,7 +47,7 @@ namespace CoCity.Foundation.Services
 
                     sectInventories[sect.SectId] = inventory with
                     {
-                        Buildings = AddSectBuilding(inventory.Buildings, nextBuilding.Value)
+                        ActiveProject = new SectBuildingProject(nextBuilding.Value, definition.BuildTimeTurns)
                     };
 
                     return sect with
@@ -58,15 +63,13 @@ namespace CoCity.Foundation.Services
                 .Where(pair => pair.Next.CurrentFunds != pair.Previous.CurrentFunds)
                 .Select(pair =>
                 {
-                    var addedBuilding = GetAddedSectBuilding(
-                        currentState.Sects.Single(item => item.SectId == pair.Next.SectId).Buildings,
-                        sectInventories[pair.Next.SectId].Buildings);
-                    var definition = BuildingCatalog.Get(addedBuilding);
+                    var project = sectInventories[pair.Next.SectId].ActiveProject!;
+                    var definition = BuildingCatalog.Get(project.Building);
                     return new BuildingConstructionEvent(
                         OwnerName: pair.Next.SectName,
                         BuildingName: definition.DisplayName,
                         ConstructionCost: definition.ConstructionCost,
-                        Summary: $"Constructed {definition.DisplayName} for {definition.ConstructionCost} taels.");
+                        Summary: $"Started {definition.DisplayName}; completion in {project.TurnsRemaining} turn(s).");
                 })
                 .ToImmutableArray();
 
@@ -131,23 +134,58 @@ namespace CoCity.Foundation.Services
             var sectInventories = currentState.Sects.ToDictionary(item => item.SectId);
             var townInventories = currentState.Towns.ToDictionary(item => item.TownId);
 
-            var nextSects = sects
-                .Select(sect =>
+            var sectConstructionEvents = ImmutableArray.CreateBuilder<BuildingConstructionEvent>();
+            var updatedSectInventories = new Dictionary<string, SectBuildingInventoryState>();
+            var fundedSects = new List<SectSimulationState>();
+            foreach (var sect in sects)
+            {
+                var advancedInventory = AdvanceSectProject(sectInventories[sect.SectId], out var completedBuilding);
+                var upkeepRequired = advancedInventory.Buildings.Sum(item => BuildingCatalog.Get(item.Building).UpkeepCost * item.Quantity);
+                var upkeepPaid = Math.Min(sect.CurrentFunds, upkeepRequired);
+                var upkeepCoverage = upkeepRequired <= 0 ? 1m : Math.Min(1m, upkeepPaid / upkeepRequired);
+                var outputBonus = advancedInventory.Buildings.Sum(item => BuildingCatalog.Get(item.Building).OutputBonus * item.Quantity);
+                var multiplier = 1m + (outputBonus * upkeepCoverage);
+                var currentSect = sect with
                 {
-                    var inventory = sectInventories[sect.SectId];
-                    var upkeepRequired = inventory.Buildings.Sum(item => BuildingCatalog.Get(item.Building).UpkeepCost * item.Quantity);
-                    var upkeepPaid = Math.Min(sect.CurrentFunds, upkeepRequired);
-                    var upkeepCoverage = upkeepRequired <= 0 ? 1m : Math.Min(1m, upkeepPaid / upkeepRequired);
-                    var outputBonus = inventory.Buildings.Sum(item => BuildingCatalog.Get(item.Building).OutputBonus * item.Quantity);
-                    var multiplier = 1m + (outputBonus * upkeepCoverage);
+                    CurrentFunds = sect.CurrentFunds - upkeepPaid,
+                    CurrentOutput = ScaleOutput(sect.CurrentOutput, multiplier)
+                };
 
-                    return sect with
+                if (completedBuilding is not null)
+                {
+                    var completedDefinition = BuildingCatalog.Get(completedBuilding.Value);
+                    sectConstructionEvents.Add(new BuildingConstructionEvent(
+                        OwnerName: sect.SectName,
+                        BuildingName: completedDefinition.DisplayName,
+                        ConstructionCost: 0m,
+                        Summary: $"Completed {completedDefinition.DisplayName}."));
+                }
+
+                if (advancedInventory.ActiveProject is null)
+                {
+                    var nextBuilding = GetNextSectBuilding(advancedInventory.Buildings);
+                    if (nextBuilding is not null)
                     {
-                        CurrentFunds = sect.CurrentFunds - upkeepPaid,
-                        CurrentOutput = ScaleOutput(sect.CurrentOutput, multiplier)
-                    };
-                })
-                .ToImmutableArray();
+                        var definition = BuildingCatalog.Get(nextBuilding.Value);
+                        if (currentSect.CurrentFunds >= definition.ConstructionCost)
+                        {
+                            currentSect = currentSect with { CurrentFunds = currentSect.CurrentFunds - definition.ConstructionCost };
+                            advancedInventory = advancedInventory with
+                            {
+                                ActiveProject = new SectBuildingProject(nextBuilding.Value, definition.BuildTimeTurns)
+                            };
+                            sectConstructionEvents.Add(new BuildingConstructionEvent(
+                                OwnerName: sect.SectName,
+                                BuildingName: definition.DisplayName,
+                                ConstructionCost: definition.ConstructionCost,
+                                Summary: $"Auto-started {definition.DisplayName}; completion in {definition.BuildTimeTurns} turn(s)."));
+                        }
+                    }
+                }
+
+                updatedSectInventories[sect.SectId] = advancedInventory;
+                fundedSects.Add(currentSect);
+            }
 
             var treasury = currentTreasuryFunds;
             var nextIndustryStatesBuilder = ImmutableArray.CreateBuilder<MortalTownIndustryState>();
@@ -164,19 +202,20 @@ namespace CoCity.Foundation.Services
 
             var nextIndustryStates = nextIndustryStatesBuilder.ToImmutable();
 
-            var operationEvents = nextSects
+            var operationEvents = fundedSects
                 .Select(sect =>
                 {
-                    var inventory = sectInventories[sect.SectId];
+                    var inventory = updatedSectInventories[sect.SectId];
+                    var originalSect = sects.Single(current => current.SectId == sect.SectId);
                     var upkeepRequired = inventory.Buildings.Sum(item => BuildingCatalog.Get(item.Building).UpkeepCost * item.Quantity);
-                    var upkeepPaid = Math.Min(sects.Single(current => current.SectId == sect.SectId).CurrentFunds, upkeepRequired);
+                    var upkeepPaid = Math.Min(originalSect.CurrentFunds, upkeepRequired);
                     var outputBonus = inventory.Buildings.Sum(item => BuildingCatalog.Get(item.Building).OutputBonus * item.Quantity);
                     var coverage = upkeepRequired <= 0 ? 1m : Math.Min(1m, upkeepPaid / upkeepRequired);
                     return new BuildingOperationEvent(
                         OwnerName: sect.SectName,
-                        Summary: inventory.Buildings.Count == 0
+                        Summary: inventory.Buildings.Count == 0 && inventory.ActiveProject is null
                             ? "No sect buildings constructed yet."
-                            : $"Building upkeep {upkeepPaid} taels | output modifier +{Math.Round(outputBonus * coverage * 100m, 0, MidpointRounding.AwayFromZero)}%.");
+                            : $"Building upkeep {upkeepPaid} taels | output modifier +{Math.Round(outputBonus * coverage * 100m, 0, MidpointRounding.AwayFromZero)}% | active project: {FormatProject(inventory.ActiveProject)}.");
                 })
                 .Concat(nextIndustryStates.Select(state =>
                 {
@@ -191,34 +230,41 @@ namespace CoCity.Foundation.Services
                 .ToImmutableArray();
 
             return new BuildingTurnResult(
-                NextState: currentState,
-                NextSects: nextSects,
+                NextState: currentState with { Sects = updatedSectInventories.Values.OrderBy(item => item.SectId).ToImmutableArray() },
+                NextSects: fundedSects.ToImmutableArray(),
                 NextIndustryStates: nextIndustryStates,
                 NextTreasuryFunds: treasury,
-                Report: new BuildingReport([], operationEvents));
+                Report: new BuildingReport(sectConstructionEvents.ToImmutable(), operationEvents));
         }
 
         private static SectBuildingType? GetNextSectBuilding(IReadOnlyList<SectBuildingCount> buildings)
             => BuildingCatalog.SectBuildOrder
                 .Cast<SectBuildingType?>()
-                .FirstOrDefault(building => building is not null && buildings.All(item => item.Building != building.Value));
+                .FirstOrDefault(building =>
+                {
+                    if (building is null)
+                    {
+                        return false;
+                    }
+
+                    var builtCount = buildings.FirstOrDefault(item => item.Building == building.Value)?.Quantity ?? 0;
+                    return builtCount < BuildingCatalog.Get(building.Value).QuantityCap;
+                });
 
         private static MortalBuildingType? GetNextTownBuilding(IReadOnlyList<MortalBuildingCount> buildings)
             => BuildingCatalog.MortalBuildOrder
                 .Cast<MortalBuildingType?>()
                 .FirstOrDefault(building => building is not null && buildings.All(item => item.Building != building.Value));
 
-        private static SectBuildingType GetAddedSectBuilding(
-            IReadOnlyList<SectBuildingCount> previous,
-            IReadOnlyList<SectBuildingCount> next)
-            => next.Single(item => previous.All(existing => existing.Building != item.Building)).Building;
-
         private static ImmutableArray<SectBuildingCount> AddSectBuilding(
             IReadOnlyList<SectBuildingCount> buildings,
             SectBuildingType building)
-            => buildings
-                .Concat([new SectBuildingCount(building, 1)])
-                .ToImmutableArray();
+        {
+            var existing = buildings.FirstOrDefault(item => item.Building == building);
+            return existing is null
+                ? buildings.Concat([new SectBuildingCount(building, 1)]).ToImmutableArray()
+                : buildings.Select(item => item.Building == building ? item with { Quantity = item.Quantity + 1 } : item).ToImmutableArray();
+        }
 
         private static ImmutableArray<MortalBuildingCount> AddTownBuilding(
             IReadOnlyList<MortalBuildingCount> buildings,
@@ -265,5 +311,37 @@ namespace CoCity.Foundation.Services
                 PurchasableSurplus = netOutput
             };
         }
+
+        private static SectBuildingInventoryState AdvanceSectProject(
+            SectBuildingInventoryState inventory,
+            out SectBuildingType? completedBuilding)
+        {
+            completedBuilding = null;
+            if (inventory.ActiveProject is null)
+            {
+                return inventory;
+            }
+
+            var remainingTurns = inventory.ActiveProject.TurnsRemaining - 1;
+            if (remainingTurns > 0)
+            {
+                return inventory with
+                {
+                    ActiveProject = inventory.ActiveProject with { TurnsRemaining = remainingTurns }
+                };
+            }
+
+            completedBuilding = inventory.ActiveProject.Building;
+            return inventory with
+            {
+                Buildings = AddSectBuilding(inventory.Buildings, inventory.ActiveProject.Building),
+                ActiveProject = null
+            };
+        }
+
+        private static string FormatProject(SectBuildingProject? project)
+            => project is null
+                ? "None"
+                : $"{BuildingCatalog.Get(project.Building).DisplayName} ({project.TurnsRemaining} turn(s) remaining)";
     }
 }

@@ -5,7 +5,7 @@ namespace CoCity.Foundation.Tests;
 public sealed class DefaultBuildingSystemServiceTests
 {
     [Fact]
-    public void ConstructNextSectBuildings_spends_sect_funds_and_adds_gate_halls()
+    public void ConstructNextSectBuildings_spends_sect_funds_and_starts_gate_hall_projects()
     {
         var foundation = new SeedCoreDataFoundationService().GetInitialState();
         var realmService = new DefaultMortalRealmSimulationService();
@@ -23,7 +23,9 @@ public sealed class DefaultBuildingSystemServiceTests
         var azureInventory = Assert.Single(result.NextState.Sects, item => item.SectId == "sect.azure-talisman-academy");
 
         Assert.Equal(4600m, azureSect.CurrentFunds);
-        Assert.Contains(azureInventory.Buildings, item => item.Building == SectBuildingType.GateHall && item.Quantity == 1);
+        Assert.Empty(azureInventory.Buildings);
+        Assert.Equal(SectBuildingType.GateHall, azureInventory.ActiveProject?.Building);
+        Assert.Equal(1, azureInventory.ActiveProject?.TurnsRemaining);
         Assert.NotEmpty(result.Report.ConstructionEvents);
     }
 
@@ -59,11 +61,14 @@ public sealed class DefaultBuildingSystemServiceTests
         var azureTown = Assert.Single(result.NextIndustryStates, state => state.TownId == "town.azure-ford");
         var baselineAzureSect = Assert.Single(foundation.Sects, sect => sect.Id == azureSect.SectId);
         var baselineAzureTown = Assert.Single(industryStates, state => state.TownId == azureTown.TownId);
+        var azureInventory = Assert.Single(result.NextState.Sects, item => item.SectId == "sect.azure-talisman-academy");
 
-        Assert.Equal(4565m, azureSect.CurrentFunds);
+        Assert.Equal(4015m, azureSect.CurrentFunds);
         Assert.True(azureSect.CurrentOutput[0].Amount > baselineAzureSect.Output[0].Amount);
         Assert.True(azureTown.NetOutput.AgricultureUnits > baselineAzureTown.NetOutput.AgricultureUnits);
         Assert.True(result.NextTreasuryFunds < townConstruction.NextTreasuryFunds);
+        Assert.Contains(azureInventory.Buildings, item => item.Building == SectBuildingType.GateHall && item.Quantity == 1);
+        Assert.Equal(SectBuildingType.DiscipleQuarters, azureInventory.ActiveProject?.Building);
         Assert.NotEmpty(result.Report.OperationEvents);
     }
 
@@ -103,5 +108,33 @@ public sealed class DefaultBuildingSystemServiceTests
 
         Assert.Equal(30.5m, azureSect.CurrentOutput[0].Amount);
         Assert.Equal(9.5m, azureSect.CurrentOutput[1].Amount);
+    }
+
+    [Fact]
+    public void ApplyTurn_auto_starts_next_foundational_project_after_completion()
+    {
+        var foundation = new SeedCoreDataFoundationService().GetInitialState();
+        var realmService = new DefaultMortalRealmSimulationService();
+        var buildingService = new DefaultBuildingSystemService();
+
+        var realmState = realmService.Initialize(foundation);
+        var buildingState = buildingService.Initialize(foundation);
+        var sectConstruction = buildingService.ConstructNextSectBuildings(
+            buildingState,
+            realmState.Sects,
+            currentTreasuryFunds: foundation.Treasury.Funds);
+
+        var firstTurn = buildingService.ApplyTurn(
+            foundation,
+            sectConstruction.NextState,
+            sectConstruction.NextSects,
+            [],
+            sectConstruction.NextTreasuryFunds);
+
+        var azureInventory = Assert.Single(firstTurn.NextState.Sects, item => item.SectId == "sect.azure-talisman-academy");
+
+        Assert.Contains(azureInventory.Buildings, item => item.Building == SectBuildingType.GateHall && item.Quantity == 1);
+        Assert.Equal(SectBuildingType.DiscipleQuarters, azureInventory.ActiveProject?.Building);
+        Assert.Equal(2, azureInventory.ActiveProject?.TurnsRemaining);
     }
 }

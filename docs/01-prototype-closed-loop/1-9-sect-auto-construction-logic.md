@@ -13,6 +13,12 @@ Implement the scope below as production-ready game behavior rather than temporar
 - Buildings have quantity caps.
 - Building construction takes time to complete.
 
+## Scope Notes
+- Build directly on the foundational building definitions and runtime inventories from Task 1.8 rather than replacing that system.
+- It is acceptable for sect auto-construction to use a deterministic build priority order and fixed construction durations in this task, as long as progress and completions are visible to the player.
+- Quantity caps only need to cover sect buildings in this task; mortal building expansion rules can remain manual until later work makes them relevant.
+- Do not introduce ministry approval workflows, broader player action routing, or non-sect construction automation in this task.
+
 ## Code Design
 - Prioritize deterministic turn resolution and highly visible state changes.
 - Keep administrative logic, world simulation, and presentation concerns separated so the prototype can expand without rewrites.

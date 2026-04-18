@@ -8,7 +8,9 @@ namespace CoCity.Foundation.Services
         string DisplayName,
         decimal ConstructionCost,
         decimal UpkeepCost,
-        decimal OutputBonus);
+        decimal OutputBonus,
+        int QuantityCap,
+        int BuildTimeTurns);
 
     public sealed record MortalBuildingDefinition(
         MortalBuildingType Building,
@@ -37,11 +39,11 @@ namespace CoCity.Foundation.Services
         public static SectBuildingDefinition Get(SectBuildingType building)
             => building switch
             {
-                SectBuildingType.GateHall => new(building, "Gate Hall", 600m, 35m, 0.05m),
-                SectBuildingType.DiscipleQuarters => new(building, "Disciple Quarters", 550m, 30m, 0.07m),
-                SectBuildingType.Warehouse => new(building, "Warehouse", 500m, 28m, 0.04m),
-                SectBuildingType.SpiritGatheringArray => new(building, "Spirit Gathering Array", 800m, 45m, 0.12m),
-                SectBuildingType.AlchemyRoom => new(building, "Alchemy Room", 750m, 40m, 0.10m),
+                SectBuildingType.GateHall => new(building, "Gate Hall", 600m, 35m, 0.05m, 1, 1),
+                SectBuildingType.DiscipleQuarters => new(building, "Disciple Quarters", 550m, 30m, 0.07m, 2, 2),
+                SectBuildingType.Warehouse => new(building, "Warehouse", 500m, 28m, 0.04m, 1, 1),
+                SectBuildingType.SpiritGatheringArray => new(building, "Spirit Gathering Array", 800m, 45m, 0.12m, 1, 2),
+                SectBuildingType.AlchemyRoom => new(building, "Alchemy Room", 750m, 40m, 0.10m, 1, 2),
                 _ => throw new ArgumentOutOfRangeException(nameof(building), building, "Unknown sect building type.")
             };
 
