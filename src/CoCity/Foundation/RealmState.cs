@@ -203,7 +203,8 @@ namespace CoCity.Foundation
 
     public sealed record SectBuildingInventoryState(
         string SectId,
-        IReadOnlyList<SectBuildingCount> Buildings);
+        IReadOnlyList<SectBuildingCount> Buildings,
+        SectBuildingProject? ActiveProject);
 
     public sealed record TownBuildingInventoryState(
         string TownId,
@@ -216,6 +217,10 @@ namespace CoCity.Foundation
     public sealed record MortalBuildingCount(
         MortalBuildingType Building,
         int Quantity);
+
+    public sealed record SectBuildingProject(
+        SectBuildingType Building,
+        int TurnsRemaining);
 
     public sealed record BuildingReport(
         IReadOnlyList<BuildingConstructionEvent> ConstructionEvents,

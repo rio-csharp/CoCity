@@ -57,7 +57,7 @@ namespace CoCity.ViewModels
         }
 
         public string PageTitle => "Prototype Closed Loop Dashboard";
-        public string PageSubtitle => "Task 1.8 adds foundational sect and mortal buildings with construction cost, upkeep, output bonuses, and visible building activity.";
+        public string PageSubtitle => "Task 1.9 adds sect auto-construction priorities, quantity caps, build-time tracking, and visible project progress.";
         public string RealmSummary => $"{_foundation.RealmName} — Turn {SimulationTurnNumber}";
         public int SimulationTurnNumber => _simulationState.TurnNumber;
         public string TaxRateSummary => $"Tax rate: {TaxationPolicyCatalog.Get(_taxationState.SelectedTaxRate).DisplayName}";
@@ -116,6 +116,7 @@ namespace CoCity.ViewModels
                 sectOperationsResult.NextIndustryStates,
                 _taxationState.CurrentTreasuryFunds);
 
+            _buildingState = buildingTurnResult.NextState;
             _simulationState = realmResult.NextState with { Sects = buildingTurnResult.NextSects };
             _industryStates = buildingTurnResult.NextIndustryStates;
             _lastSectOperationsReport = sectOperationsResult.Report;
@@ -375,9 +376,17 @@ namespace CoCity.ViewModels
             => $"{Math.Round(value * 100m, 0, MidpointRounding.AwayFromZero)}%";
 
         private static string FormatSectBuildings(SectBuildingInventoryState? inventory)
-            => inventory is null || inventory.Buildings.Count == 0
+            => inventory is null
                 ? "None"
-                : string.Join(" | ", inventory.Buildings.Select(item => $"{BuildingCatalog.Get(item.Building).DisplayName} x{item.Quantity}"));
+                : string.Join(
+                    " | ",
+                    inventory.Buildings.Select(item => $"{BuildingCatalog.Get(item.Building).DisplayName} x{item.Quantity}")
+                        .Concat(inventory.ActiveProject is null
+                            ? []
+                            : [$"Project: {BuildingCatalog.Get(inventory.ActiveProject.Building).DisplayName} ({inventory.ActiveProject.TurnsRemaining} turn(s))"]))
+                    .Trim() is { Length: > 0 } summary
+                        ? summary
+                        : "None";
 
         private static string FormatTownBuildings(TownBuildingInventoryState? inventory)
             => inventory is null || inventory.Buildings.Count == 0

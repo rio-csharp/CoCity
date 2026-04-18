@@ -12,7 +12,7 @@ Use this file to track implementation status for every planned increment. Update
 | 1.6 | Prototype Closed Loop | Sect Recruitment Workflow | Done | Copilot | Replaced the earlier fixed recruitment placeholder with wage-driven sect hiring, sect wage costs, visible recruitment outcomes, and regression coverage while leaving 1.7 autonomous sect operations for later. |
 | 1.7 | Prototype Closed Loop | Sect Autonomous Operations | Done | Copilot | Wired sect upkeep, raw-material purchasing, and output scaling into the turn loop via the existing industry purchase flow and sect runtime funds, surfaced sect operation events in the dashboard, and kept 1.8 building systems out of scope. |
 | 1.8 | Prototype Closed Loop | Foundational Building System | Done | Copilot | Added foundational sect and mortal building definitions, runtime inventories, narrow construction controls, turn-based building upkeep/output effects, and visible building activity while keeping 1.9 auto-construction logic out of scope. |
-| 1.9 | Prototype Closed Loop | Sect Auto-Construction Logic | Not Started | - | - |
+| 1.9 | Prototype Closed Loop | Sect Auto-Construction Logic | Done | Copilot | Extended the 1.8 building system with deterministic sect auto-construction priorities, quantity caps, build-time project tracking, visible project progress/completion reporting, and regression coverage while keeping ministry workflows and broader action routing out of scope. |
 | 1.10 | Prototype Closed Loop | Ministry Framework | Not Started | - | - |
 | 1.11 | Prototype Closed Loop | Ministry Automation Rules | Not Started | - | - |
 | 1.12 | Prototype Closed Loop | Player Core Actions | Not Started | - | - |
