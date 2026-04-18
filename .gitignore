@@ -95,3 +95,4 @@ ehthumbs.db
 # Add project-specific ignores below as needed
 mykeystore.keystore
 *.keystore
+.claude/settings.local.json
