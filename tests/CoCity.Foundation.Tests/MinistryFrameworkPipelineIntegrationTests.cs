@@ -43,6 +43,6 @@ public sealed class MinistryFrameworkPipelineIntegrationTests
 
         Assert.NotEmpty(ministryResult.Report.MinistryEvents);
         Assert.Contains(ministryResult.Report.MinistryEvents, evt => evt.MinistryId == "ministry.personnel" && evt.ActiveCases > 0);
-        Assert.Contains(ministryResult.Report.MinistryEvents, evt => evt.MinistryId == "ministry.revenue" && evt.ActiveCases == foundation.Towns.Count);
+        Assert.Contains(ministryResult.Report.MinistryEvents, evt => evt.MinistryId == "ministry.revenue" && evt.ProcessedCases == foundation.Towns.Count);
     }
 }

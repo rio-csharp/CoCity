@@ -27,12 +27,13 @@ public sealed class DefaultMinistryFrameworkServiceTests
 
         Assert.Equal(3, result.Ministries.Count);
         Assert.True(personnel.HandlingCapacity > 0m);
+        Assert.True(revenue.AutomationSuccessRate > 0m);
         Assert.Equal(foundation.Towns.Count, revenue.ActiveCaseCount);
         Assert.NotEmpty(rites.ActiveCases);
     }
 
     [Fact]
-    public void Step_creates_personnel_cases_for_active_sect_projects()
+    public void Step_automates_routine_personnel_cases_without_escalation()
     {
         var foundation = new SeedCoreDataFoundationService().GetInitialState();
         var realmService = new DefaultMortalRealmSimulationService();
@@ -64,6 +65,8 @@ public sealed class DefaultMinistryFrameworkServiceTests
         var personnel = Assert.Single(result.NextState.Ministries, ministry => ministry.MinistryId == "ministry.personnel");
 
         Assert.NotEmpty(personnel.ActiveCases);
+        Assert.True(personnel.ProcessedCaseCount > 0);
+        Assert.Equal(0, personnel.EscalatedCaseCount);
         Assert.All(personnel.ActiveCases, item => Assert.Equal(MinistryCaseType.SectApplication, item.CaseType));
         Assert.Contains(personnel.ActiveCases, item => item.Summary.Contains("expansion", StringComparison.OrdinalIgnoreCase));
     }
@@ -92,6 +95,8 @@ public sealed class DefaultMinistryFrameworkServiceTests
         var revenue = Assert.Single(result.NextState.Ministries, ministry => ministry.MinistryId == "ministry.revenue");
 
         Assert.Equal(revenue.ActiveCaseCount, revenue.EscalatedCaseCount);
+        Assert.Equal(0, revenue.ProcessedCaseCount);
+        Assert.NotEmpty(revenue.PendingEscalations);
         Assert.Contains(result.Report.MinistryEvents, evt => evt.MinistryId == "ministry.revenue" && evt.EscalatedCases > 0);
     }
 
@@ -122,7 +127,7 @@ public sealed class DefaultMinistryFrameworkServiceTests
         var result = ministryService.Step(foundation, ministryState, adjustedRealmState, buildingState, taxationState);
         var rites = Assert.Single(result.NextState.Ministries, ministry => ministry.MinistryId == "ministry.rites");
 
-        Assert.Contains(rites.ActiveCases, item => item.SubjectId == "sect.azure-talisman-academy" && item.RequiresEscalation);
+        Assert.Contains(rites.PendingEscalations, item => item.SubjectId == "sect.azure-talisman-academy");
     }
 
     [Fact]
@@ -160,6 +165,29 @@ public sealed class DefaultMinistryFrameworkServiceTests
         var result = ministryService.Step(foundation, ministryState, adjustedRealmState, buildingState, taxationState);
         var personnel = Assert.Single(result.NextState.Ministries, ministry => ministry.MinistryId == "ministry.personnel");
 
-        Assert.Contains(personnel.ActiveCases, item => item.SubjectId == "sect.azure-talisman-academy" && item.RequiresEscalation);
+        Assert.Contains(personnel.PendingEscalations, item => item.SubjectId == "sect.azure-talisman-academy");
+    }
+
+    [Fact]
+    public void Step_automates_revenue_cases_under_standard_policy()
+    {
+        var foundation = new SeedCoreDataFoundationService().GetInitialState();
+        var realmService = new DefaultMortalRealmSimulationService();
+        var buildingService = new DefaultBuildingSystemService();
+        var taxationService = new DefaultMortalTaxationSimulationService();
+        var industryService = new DefaultMortalIndustrySimulationService();
+        var ministryService = new DefaultMinistryFrameworkService();
+
+        var realmState = realmService.Initialize(foundation);
+        var buildingState = buildingService.Initialize(foundation);
+        var industryStates = industryService.Initialize(foundation, foundation.Ministries);
+        var taxationState = taxationService.Initialize(foundation, realmState, industryStates);
+        var ministryState = ministryService.Initialize(foundation, realmState, buildingState, taxationState);
+
+        var result = ministryService.Step(foundation, ministryState, realmState, buildingState, taxationState);
+        var revenue = Assert.Single(result.NextState.Ministries, ministry => ministry.MinistryId == "ministry.revenue");
+
+        Assert.Equal(foundation.Towns.Count, revenue.ProcessedCaseCount);
+        Assert.Equal(0, revenue.EscalatedCaseCount);
     }
 }
