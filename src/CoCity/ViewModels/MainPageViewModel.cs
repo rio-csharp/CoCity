@@ -16,7 +16,6 @@ namespace CoCity.ViewModels
         private MortalRealmState _simulationState;
         private IReadOnlyList<MortalTownIndustryState> _industryStates;
         private TurnReport? _lastReport;
-        private IndustryTurnReport? _lastIndustryReport;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -69,7 +68,6 @@ namespace CoCity.ViewModels
 
             var industryResult = _industryService.Step(_foundation, _foundation.Ministries, _simulationState, _industryStates);
             _industryStates = industryResult.NextStates;
-            _lastIndustryReport = industryResult.Report;
 
             BuildDisplayState();
 

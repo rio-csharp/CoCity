@@ -1,4 +1,6 @@
 ﻿using CoCity.ViewModels;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.Xaml;
 
 namespace CoCity
 {
@@ -6,7 +8,7 @@ namespace CoCity
     {
         public MainPage(MainPageViewModel viewModel)
         {
-            InitializeComponent();
+            Extensions.LoadFromXaml(this, typeof(MainPage));
             BindingContext = viewModel;
         }
     }

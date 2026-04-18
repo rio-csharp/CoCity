@@ -55,6 +55,34 @@
                 </BindableLayout.ItemTemplate>
             </VerticalStackLayout>
 
+            <!-- Industry State -->
+            <Label Text="Mortal Industry"
+                   FontAttributes="Bold"
+                   FontSize="20"
+                   IsVisible="{Binding HasIndustryEvents}" />
+
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding TownIndustries}"
+                                 Spacing="12"
+                                 IsVisible="{Binding HasIndustryEvents}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="viewModels:TownIndustryCardViewModel">
+                        <Border Padding="14">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="14" />
+                            </Border.StrokeShape>
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="{Binding TownName}" FontAttributes="Bold" FontSize="16" />
+                                <Label Text="{Binding LaborForceSummary}" />
+                                <Label Text="{Binding GrossOutputSummary}" />
+                                <Label Text="{Binding GovernmentEfficiencySummary}" />
+                                <Label Text="{Binding NetOutputSummary}" />
+                                <Label Text="{Binding PurchasableSurplusSummary}" FontAttributes="Bold" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
             <!-- Turn Events -->
             <Label Text="Turn Events"
                    FontAttributes="Bold"

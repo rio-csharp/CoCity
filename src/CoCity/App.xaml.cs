@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Maui;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.Xaml;
 
 namespace CoCity
 {
@@ -8,7 +11,7 @@ namespace CoCity
 
         public App(IServiceProvider serviceProvider)
         {
-            InitializeComponent();
+            Extensions.LoadFromXaml(this, typeof(App));
             _serviceProvider = serviceProvider;
         }
 
